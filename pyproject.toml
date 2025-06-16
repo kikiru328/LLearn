@@ -9,6 +9,7 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "sqlalchemy (>=2.0.41,<3.0.0)"
 ]
 
 
