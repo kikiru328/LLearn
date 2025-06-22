@@ -1,5 +1,7 @@
 from uuid import uuid4
 from datetime import datetime
+import pytest
+
 from domain.entities.user import User
 
 def test_change_nickname_success():
@@ -27,8 +29,6 @@ def test_change_nickname_too_short():
         created_at=datetime.now(),
         updated_at=datetime.now()
     )
-    try:
-        user.change_nickname("a") #short
-        assert False
-    except ValueError as e:
-        assert "닉네임은 2자 이상이어야 합니다." in str(e)
+    with pytest.raises(ValueError) as exc_info:
+        user.change_nickname("a")
+    assert "닉네임은 2자 이상이어야 합니다." in str(exc_info.value)
