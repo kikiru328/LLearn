@@ -1,14 +1,16 @@
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
+from domain.value_objects.email import Email
+from domain.value_objects.password import Password
 
 @dataclass
 class User:
     """User's domain entity"""
     id: UUID
-    email: str
+    email: Email
     nickname: str
-    hashed_password: str
+    hashed_password: Password
     is_active: bool
     is_admin: bool
     created_at: datetime
