@@ -11,11 +11,11 @@ class User:
     email: Email
     nickname: str
     hashed_password: Password
-    is_active: bool
-    is_admin: bool
     created_at: datetime
     updated_at: datetime
-
+    is_active: bool = True
+    is_admin: bool = False
+    
     def change_nickname(self, new_nickname: str) -> None:
         """Change User's nickname to new_nickname"""
         if not new_nickname or len(new_nickname.strip()) < 2:
