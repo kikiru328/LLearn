@@ -35,7 +35,7 @@ class UserRepositoryImpl(UserRepository):
             id=str(user.id),  # UUID → str
             email=user.email.value,  # Email VO → str
             nickname=user.nickname,
-            hashed_password=user.hashed_password,  # Password VO → str
+            hashed_password=str(user.hashed_password),  # Password VO → str
             is_active=user.is_active,
             is_admin=user.is_admin,
             created_at=user.created_at,
