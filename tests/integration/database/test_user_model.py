@@ -1,7 +1,7 @@
 from sqlalchemy import text
 from infrastructure.database.config import sync_engine
 from infrastructure.database.base import Base
-
+from infrastructure.database.models.user_model import UserModel
 
 class TestUserModel:
     """
@@ -85,4 +85,3 @@ class TestUserModel:
             assert 'hashed_password' in columns  # 해시된 비밀번호
             assert 'is_active' in columns    # 활성 상태
             assert 'is_admin' in columns     # 관리자 여부
-            

@@ -10,7 +10,7 @@ class UserModel(BaseModel):
     email: Mapped[str] = mapped_column(
         String(255),
         unique=True,
-        index=True,
+        index=True, # lot of query
         nullable=False,
         comment="사용자 이메일"
     )
