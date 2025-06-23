@@ -11,6 +11,7 @@ class WeekTopic:
     title: str
     description: str
     learning_goals: List[str]
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def update_title(self, new_title: str) -> None:

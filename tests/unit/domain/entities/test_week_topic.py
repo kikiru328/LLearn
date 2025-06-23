@@ -24,6 +24,7 @@ class TestWeekTopic:
         assert week_topic.title == "컴퓨터 구조 기초"
         assert week_topic.description == "CPU, 메모리, 입출력 장치에 대해 학습합니다"
         assert week_topic.learning_goals == ["CPU 작동 원리 이해", "메모리 계층 구조 학습"]
+        assert isinstance(week_topic.created_at, datetime)
         assert isinstance(week_topic.updated_at, datetime)
 
     def test_update_title_success(self):
