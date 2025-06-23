@@ -42,31 +42,17 @@ class TestWeekTopic:
         assert week_topic.title == "새로운 제목"
         assert week_topic.updated_at > old_updated_at
 
-    def test_update_title_with_empty_string_raises_error(self):
-        """주차별 제목 수정 실패 테스트: 비어있는 경우"""
+    def test_update_title_with_empty_string_sets_default(self):
+        """빈 문자열 입력시 기본값으로 설정되는 테스트"""
         week_topic = WeekTopic(
             curriculum_id=uuid4(),
-            week_number=1,
+            week_number=3, # 테스트 예상: "3주차"
             title="원래 제목",
             description="설명",
             learning_goals=["목표1"]
         )
-
-        with pytest.raises(ValueError, match="주제 제목은 2자 이상이어야 합니다"):
-            week_topic.update_title("")
-
-    def test_update_title_with_short_string_raises_error(self):
-        """주차별 제목 수정 실패 테스트: 짧을 경우"""
-        week_topic = WeekTopic(
-            curriculum_id=uuid4(),
-            week_number=1,
-            title="원래 제목",
-            description="설명",
-            learning_goals=["목표1"]
-        )
-
-        with pytest.raises(ValueError, match="주제 제목은 2자 이상이어야 합니다"):
-            week_topic.update_title("a")
+        week_topic.update_title("") #빈칸
+        assert week_topic.title == "3주차"
 
     def test_update_description_success(self):
         """설명 변경 성공 테스트"""
@@ -85,8 +71,8 @@ class TestWeekTopic:
         assert week_topic.description == "새로운 설명입니다 추가내용"
         assert week_topic.updated_at > old_updated_at
 
-    def test_update_description_with_short_string_raises_error(self):
-        """설명 변경 실패 테스트: 짧을 경우"""
+    def test_update_description_with_empty_string_success(self):
+        """설명 변경 성공 테스트: 빈 문자열"""
         week_topic = WeekTopic(
             curriculum_id=uuid4(),
             week_number=1,
@@ -94,9 +80,8 @@ class TestWeekTopic:
             description="원래 설명입니다",
             learning_goals=["목표1"]
         )
-
-        with pytest.raises(ValueError, match="주제 설명은 10자 이상이어야 합니다"):
-            week_topic.update_description("짧음")
+        week_topic.update_description("")
+        assert week_topic.description == ""
 
     def test_update_learning_goals_success(self):
         """주차별 목표 수정 성공 테스트"""

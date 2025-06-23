@@ -15,16 +15,15 @@ class WeekTopic:
 
     def update_title(self, new_title: str) -> None:
         """change title"""
-        if not new_title or len(new_title.strip()) < 2:
-            raise ValueError("주제 제목은 2자 이상이어야 합니다.")
-        self.title = new_title.strip()
+        if not new_title or new_title.strip() == "":
+            self.title = f"{self.week_number}주차"
+        else:
+            self.title = new_title.strip()
         self.updated_at = datetime.now(timezone.utc)
 
     def update_description(self, new_description: str) -> None:
         """modify description"""
-        if not new_description or len(new_description.strip()) < 10:
-            raise ValueError("주제 설명은 10자 이상이어야 합니다.")
-        self.description = new_description.strip()
+        self.description = new_description.strip() # 빈 문장도 가능
         self.updated_at = datetime.now(timezone.utc)
 
     def update_learning_goals(self, new_goals: List[str]) -> None:
