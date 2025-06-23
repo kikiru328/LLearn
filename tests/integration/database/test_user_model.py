@@ -1,8 +1,6 @@
-import pytest
 from sqlalchemy import text
-from infrastructure.database.config import engine
+from infrastructure.database.config import sync_engine
 from infrastructure.database.base import Base
-from infrastructure.database.models import UserModel
 
 
 class TestUserModel:
@@ -22,14 +20,14 @@ class TestUserModel:
         검증: SELECT 1 쿼리가 성공적으로 실행되는지
         """
         # with 문: 연결 자동 관리 (try-finally와 유사)
-        with engine.connect() as connection:
+        with sync_engine.connect() as connection:
             # text(): SQLAlchemy 2.0에서 raw SQL 실행 시 필수
             result = connection.execute(text("SELECT 1"))
 
             # fetchone(): 결과 한 행 가져오기
             # [0]: 첫 번째 컬럼 값 (이 경우 1)
             assert result.fetchone()[0] == 1
-            # 🎯 검증: 1이 반환되면 연결 성공!
+            # 검증: 1이 반환되면 연결 성공!
 
     def test_user_table_creation(self):
         """
@@ -41,10 +39,10 @@ class TestUserModel:
         # Base.metadata.create_all():
         # - 모든 모델(UserModel 등)을 실제 테이블로 생성
         # - 이미 존재하면 무시 (IF NOT EXISTS와 유사)
-        Base.metadata.create_all(bind=engine)
+        Base.metadata.create_all(bind=sync_engine)
 
         # 생성된 테이블 목록 확인
-        with engine.connect() as connection:
+        with sync_engine.connect() as connection:
             # SHOW TABLES: MySQL 명령어로 모든 테이블 조회
             result = connection.execute(text("SHOW TABLES"))
 
@@ -52,7 +50,7 @@ class TestUserModel:
             # row[0]: 각 행의 첫 번째 컬럼 (테이블명)
             tables = [row[0] for row in result]
 
-            # 🎯 검증: 'users' 테이블이 생성됐는지 확인
+            # 검증: 'users' 테이블이 생성됐는지 확인
             assert 'users' in tables
 
     def test_user_table_structure(self):
@@ -63,9 +61,9 @@ class TestUserModel:
         검증: 모든 필수 컬럼들이 올바르게 생성됐는지
         """
         # 먼저 테이블 생성
-        Base.metadata.create_all(bind=engine)
+        Base.metadata.create_all(bind=sync_engine)
 
-        with engine.connect() as connection:
+        with sync_engine.connect() as connection:
             # DESCRIBE users: MySQL 명령어로 테이블 구조 조회
             # 결과: 컬럼명, 타입, NULL 허용 여부 등
             result = connection.execute(text("DESCRIBE users"))
@@ -74,7 +72,7 @@ class TestUserModel:
             # row[0]: 컬럼명, row[1]: 데이터 타입
             columns = {row[0]: row[1] for row in result}
 
-            # 🎯 검증: UserModel에서 정의한 모든 컬럼이 존재하는지
+            # 검증: UserModel에서 정의한 모든 컬럼이 존재하는지
 
             # BaseModel에서 상속받은 컬럼들
             assert 'id' in columns          # UUID 기본키
@@ -87,3 +85,4 @@ class TestUserModel:
             assert 'hashed_password' in columns  # 해시된 비밀번호
             assert 'is_active' in columns    # 활성 상태
             assert 'is_admin' in columns     # 관리자 여부
+            
