@@ -1,6 +1,6 @@
-from typing import Optional, List
+from typing import Optional
 from uuid import UUID
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timezone
 
@@ -13,7 +13,7 @@ from infrastructure.database.models.user_model import UserModel
 class UserRepositoryImpl(UserRepository):
     """User Repository SQLAlchemy 구현체"""
 
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         """
         Args:
             session: SQLAlchemy 세션 (의존성 주입)
@@ -43,9 +43,9 @@ class UserRepositoryImpl(UserRepository):
         )
 
         # 2. DB에 저장
-        self.session.add(user_model)
-        self.session.commit()
-        self.session.refresh(user_model)  # DB에서 생성된 값들 다시 로드
+        self.session.add(user_model) # 메모리에 객체 추가(DB접근X)
+        await self.session.commit() # 실제 DB 작성, DB 접근 O
+        await self.session.refresh(user_model)  # DB에서 생성된 값들 다시 로드
 
         # 3. SQLAlchemy Model → Domain Entity 변환
         return self._model_to_entity(user_model)
@@ -54,8 +54,8 @@ class UserRepositoryImpl(UserRepository):
         """ID로 사용자 찾기"""
         # SELECT * FROM users WHERE id = 'uuid값'
         stmt = select(UserModel).where(UserModel.id == str(user_id))
-        # query 실행
-        result = self.session.execute(stmt)
+        # query 실행 -> DB 접근
+        result = await self.session.execute(stmt)
         #scalar_one_or_none(): 결과가 1개면 반환, 0개면 None, 2개 이상이면 에러
         user_model = result.scalar_one_or_none()
 
@@ -66,7 +66,7 @@ class UserRepositoryImpl(UserRepository):
     async def find_by_email(self, email: str) -> Optional[User]:
         """이메일로 사용자 찾기"""
         stmt = select(UserModel).where(UserModel.email == email)
-        result = self.session.execute(stmt)
+        result = await self.session.execute(stmt)
         user_model = result.scalar_one_or_none()
 
         if user_model is None:
@@ -77,27 +77,27 @@ class UserRepositoryImpl(UserRepository):
     async def delete(self, user_id: UUID) -> bool:
         """사용자 삭제"""
         stmt = select(UserModel).where(UserModel.id == str(user_id))
-        result = self.session.execute(stmt)
+        result = await self.session.execute(stmt)
         user_model = result.scalar_one_or_none()
 
         if user_model is None:
             return False
 
-        self.session.delete(user_model)
-        self.session.commit()
+        await self.session.delete(user_model)
+        await self.session.commit()
         return True
 
     async def exists_by_email(self, email: str) -> bool:
         """이메일로 사용자 존재 여부 확인"""
         stmt = select(UserModel).where(UserModel.email == email)
-        result = self.session.execute(stmt)
+        result = await self.session.execute(stmt)
         user_model = result.scalar_one_or_none()
         return user_model is not None
 
     async def update_password(self, user_id: UUID, new_password: Password) -> bool:
         """사용자 비밀번호 업데이트"""
         stmt = select(UserModel).where(UserModel.id == str(user_id))
-        result = self.session.execute(stmt)
+        result = await self.session.execute(stmt)
         user_model = result.scalar_one_or_none()
 
         if user_model is None:
@@ -105,7 +105,7 @@ class UserRepositoryImpl(UserRepository):
 
         user_model.hashed_password = str(new_password)
         user_model.updated_at = datetime.now(timezone.utc)
-        self.session.commit()
+        await self.session.commit()
         return True
 
     def _model_to_entity(self, user_model: UserModel) -> User:
