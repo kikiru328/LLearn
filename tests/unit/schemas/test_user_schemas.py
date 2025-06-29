@@ -9,18 +9,18 @@ from app.schemas.user import (
     UserResponse,
 )
 
-
+VALID_PASSWORD = "password123"
 class TestCreateUserRequest:
     def test_valid_create_user_request(self):
         """정상적인 회원가입 요청 테스트"""
         request = CreateUserRequest(
             email="test@example.com",
             nickname="홍길동",
-            password="password123"
+            password=VALID_PASSWORD
         )
         assert request.email == "test@example.com"
         assert request.nickname == "홍길동"
-        assert request.password == "password123"
+        assert request.password == VALID_PASSWORD
 
     def test_invalid_email(self):
         """잘못된 이메일 형식 테스트"""
@@ -28,7 +28,7 @@ class TestCreateUserRequest:
             CreateUserRequest(
                 email="잘못된이메일",
                 nickname="홍길동",
-                password="password123"
+                password=VALID_PASSWORD
             )
 
     def test_nickname_too_short(self):
@@ -37,7 +37,7 @@ class TestCreateUserRequest:
             CreateUserRequest(
                 email="test@example.com",
                 nickname="a",  # 1자 (최소 2자)
-                password="password123"
+                password=VALID_PASSWORD
             )
 
     def test_nickname_too_long(self):
@@ -46,7 +46,7 @@ class TestCreateUserRequest:
             CreateUserRequest(
                 email="test@example.com",
                 nickname="a" * 11,  # 11자 (최대 10자)
-                password="password123"
+                password=VALID_PASSWORD
             )
 
     def test_password_too_short(self):
@@ -64,17 +64,17 @@ class TestLoginRequest:
         """정상적인 로그인 요청 테스트"""
         request = LoginRequest(
             email="test@example.com",
-            password="password123"
+            password=VALID_PASSWORD
         )
         assert request.email == "test@example.com"
-        assert request.password == "password123"
+        assert request.password == VALID_PASSWORD
 
     def test_invalid_email(self):
         """잘못된 이메일 형식 테스트"""
         with pytest.raises(ValidationError):
             LoginRequest(
                 email="잘못된이메일",
-                password="password123"
+                password=VALID_PASSWORD
             )
 
 
