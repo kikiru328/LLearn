@@ -10,6 +10,7 @@ from app.schemas.user import (
 )
 
 VALID_PASSWORD = "password123"
+INVALID_PASSWORD = "pwd"
 class TestCreateUserRequest:
     def test_valid_create_user_request(self):
         """정상적인 회원가입 요청 테스트"""
@@ -55,7 +56,7 @@ class TestCreateUserRequest:
             CreateUserRequest(
                 email="test@example.com",
                 nickname="홍길동",
-                password="1234567"  # 7자 (최소 8자)
+                password=INVALID_PASSWORD  # 7자 (최소 8자)
             )
 
 
