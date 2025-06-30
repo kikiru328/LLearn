@@ -50,7 +50,18 @@ class SummaryRepositoryImpl(SummaryRepository):
         if summary_model is None:
             return None
         return self._model_to_entity(summary_model)
-
+    
+    async def find_by_week_topic_id_and_public(self, week_topic_id: UUID, is_public: bool) -> List[Summary]:
+        """특정 주차의 공개/비공개 요약들 조회"""
+        stmt = select(SummaryModel).where(
+            SummaryModel.week_topic_id == str(week_topic_id),  # UUID → str 변환
+            SummaryModel.is_public == is_public
+        )
+        result = await self.session.execute(stmt)
+        summary_models = result.scalars().all()
+        
+        return [self._model_to_entity(model) for model in summary_models]
+    
     async def find_public_summaries(self) -> List[Summary]:
         stmt = select(SummaryModel).where(SummaryModel.is_public == True)
         result = await self.session.execute(stmt)
