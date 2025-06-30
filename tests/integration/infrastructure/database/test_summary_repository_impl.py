@@ -188,4 +188,118 @@ class TestSummaryRepositoryImpl:
         assert found_summary.is_public == True
         assert found_summary.id is not None
 
+    @pytest.mark.asyncio
+    async def test_find_by_week_topic_id_and_public_returns_public_only(self, test_session, repository, test_data):
+        """특정 주차의 공개 요약만 조회"""
+        # Given: 같은 주차에 공개/비공개 요약 생성
+        public_summary = Summary(
+            user_id=test_data.test_user.id,
+            week_topic_id=test_data.test_week_topic.id,
+            content="공개 요약본",
+            is_public=True,
+        )
+        private_summary = Summary(
+            user_id=test_data.test_user.id,
+            week_topic_id=test_data.test_week_topic.id,
+            content="비공개 요약본",
+            is_public=False,
+        )
+        await repository.save(public_summary)
+        await repository.save(private_summary)
+        
+        # When: 공개 요약만 조회
+        found_summaries = await repository.find_by_week_topic_id_and_public(
+            week_topic_id=test_data.test_week_topic.id,
+            is_public=True
+        )
+        
+        # Then: 공개 요약만 반환
+        assert len(found_summaries) == 1
+        assert found_summaries[0].content == "공개 요약본"
+        assert found_summaries[0].is_public == True
 
+    @pytest.mark.asyncio
+    async def test_find_by_week_topic_id_and_public_returns_private_only(self, test_session, repository, test_data):
+        """특정 주차의 비공개 요약만 조회"""
+        # Given: 같은 주차에 공개/비공개 요약 생성
+        public_summary = Summary(
+            user_id=test_data.test_user.id,
+            week_topic_id=test_data.test_week_topic.id,
+            content="공개 요약본",
+            is_public=True,
+        )
+        private_summary = Summary(
+            user_id=test_data.test_user.id,
+            week_topic_id=test_data.test_week_topic.id,
+            content="비공개 요약본",
+            is_public=False,
+        )
+        await repository.save(public_summary)
+        await repository.save(private_summary)
+        
+        # When: 비공개 요약만 조회
+        found_summaries = await repository.find_by_week_topic_id_and_public(
+            week_topic_id=test_data.test_week_topic.id,
+            is_public=False
+        )
+        
+        # Then: 비공개 요약만 반환
+        assert len(found_summaries) == 1
+        assert found_summaries[0].content == "비공개 요약본"
+        assert found_summaries[0].is_public == False
+
+    @pytest.mark.asyncio
+    async def test_find_by_week_topic_id_and_public_different_weeks(self, test_session, repository, test_data):
+        """다른 주차의 요약은 조회되지 않음"""
+        # Given: 1주차에 공개 요약 생성
+        summary_week1 = Summary(
+            user_id=test_data.test_user.id,
+            week_topic_id=test_data.test_week_topic.id,  # 1주차
+            content="1주차 공개 요약",
+            is_public=True,
+        )
+        await repository.save(summary_week1)
+        
+        # 2주차 생성 및 공개 요약 생성
+        week2 = await self.create_additional_week_topic(test_session, 
+                                                        test_curriculum=test_data.test_curriculum,
+                                                        week_number=2)
+        summary_week2 = Summary(
+            user_id=test_data.test_user.id,
+            week_topic_id=week2.id,  # 2주차
+            content="2주차 공개 요약",
+            is_public=True,
+        )
+        await repository.save(summary_week2)
+        
+        # When: 1주차의 공개 요약만 조회
+        found_summaries = await repository.find_by_week_topic_id_and_public(
+            week_topic_id=test_data.test_week_topic.id,  # 1주차만
+            is_public=True
+        )
+        
+        # Then: 1주차 요약만 반환
+        assert len(found_summaries) == 1
+        assert found_summaries[0].content == "1주차 공개 요약"
+        assert found_summaries[0].week_topic_id == test_data.test_week_topic.id
+
+    @pytest.mark.asyncio
+    async def test_find_by_week_topic_id_and_public_empty_result(self, test_session, repository, test_data):
+        """조건에 맞는 요약이 없을 때 빈 리스트 반환"""
+        # Given: 비공개 요약만 존재
+        private_summary = Summary(
+            user_id=test_data.test_user.id,
+            week_topic_id=test_data.test_week_topic.id,
+            content="비공개 요약본",
+            is_public=False,
+        )
+        await repository.save(private_summary)
+        
+        # When: 공개 요약 조회 (존재하지 않음)
+        found_summaries = await repository.find_by_week_topic_id_and_public(
+            week_topic_id=test_data.test_week_topic.id,
+            is_public=True
+        )
+        
+        # Then: 빈 리스트 반환
+        assert len(found_summaries) == 0

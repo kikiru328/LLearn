@@ -32,7 +32,12 @@ class SummaryRepository(ABC):
     async def find_public_summaries(self) -> List[Summary]:
         """공개된 요약 피드 조회"""
         pass
-
+    
+    @abstractmethod
+    async def find_by_week_topic_id_and_public(self, week_topic_id: UUID, is_public: bool) -> List[Summary]:
+        """특정 주차의 공개/비공개 요약들 조회"""
+        pass
+    
     @abstractmethod
     async def find_all(self) -> List[Summary]:
         """전체 요약 조회 (관리자용)"""

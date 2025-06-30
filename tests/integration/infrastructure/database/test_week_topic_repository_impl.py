@@ -1,6 +1,7 @@
 from typing import List
 from uuid import uuid4
 
+import bcrypt
 import pytest
 import pytest_asyncio
 
@@ -12,7 +13,7 @@ from domain.value_objects.password import Password
 from infrastructure.database.repositories import UserRepositoryImpl
 from infrastructure.database.repositories.curriculum_repository_impl import CurriculumRepositoryImpl
 from infrastructure.database.repositories.week_topic_repository_impl import WeekTopicRepositoryImpl
-
+DUMMY = str(uuid4()).encode()
 
 class TestWeekTopicRepositoryImpl:
 
@@ -20,7 +21,7 @@ class TestWeekTopicRepositoryImpl:
     async def test_user(self, test_session):
         """테스트용 user fixture"""
         unique_id = str(uuid4())
-        test_hashed_password = f"$2b$12$LQv3c1yqBWVHxkd0LHAk{unique_id}COYz6TtxMQJqhN8/LewdBPj5mIlz7PGuy"
+        test_hashed_password = bcrypt.hashpw(DUMMY, bcrypt.gensalt()).decode()
         user = User(
             email=Email(f"test-{unique_id}@example.com"),
             nickname=f"테스트유저-{unique_id}",
