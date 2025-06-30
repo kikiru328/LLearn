@@ -42,9 +42,10 @@ class TestUserRepositoryImpl:
     async def test_save_and_find_by_email(self, test_session):
         """사용자 저장 후 이메일로 조회"""
         # Given
+        email = Email("email@test.com")
         repository = UserRepositoryImpl(test_session)
         user = User(
-            email=Email("email@test.com"),
+            email=email,
             nickname="이메일테스트",
             hashed_password=Password(self.TEST_HASHED_PASSWORD)
         )
@@ -53,7 +54,7 @@ class TestUserRepositoryImpl:
         await repository.save(user)
 
         # Then
-        found_user = await repository.find_by_email("email@test.com")
+        found_user = await repository.find_by_email(email)
 
         assert found_user is not None
         assert found_user.email.value == "email@test.com"
@@ -94,8 +95,9 @@ class TestUserRepositoryImpl:
         """Domain Entity ↔ SQLAlchemy Model 변환 검증"""
         # Given
         repository = UserRepositoryImpl(test_session)
+        email = Email("conversion@test.com")
         original_user = User(
-            email=Email("conversion@test.com"),
+            email=email,
             nickname="변환테스트",
             hashed_password=Password(self.TEST_HASHED_PASSWORD),
             is_active=True,
@@ -104,7 +106,7 @@ class TestUserRepositoryImpl:
 
         # When
         await repository.save(original_user)
-        found_user = await repository.find_by_email("conversion@test.com")
+        found_user = await repository.find_by_email(email)
 
         # Then
         assert isinstance(found_user.email, Email)

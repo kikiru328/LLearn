@@ -5,6 +5,7 @@ from sqlalchemy import select
 from datetime import datetime, timezone
 
 from domain.entities.user import User
+from domain.value_objects.email import Email
 from domain.value_objects.password import Password
 from domain.repositories.user_repository import UserRepository  # 인터페이스
 from infrastructure.database.models.user_model import UserModel
@@ -63,9 +64,9 @@ class UserRepositoryImpl(UserRepository):
             return None
         return self._model_to_entity(user_model)
 
-    async def find_by_email(self, email: str) -> Optional[User]:
+    async def find_by_email(self, email: Email) -> Optional[User]:
         """이메일로 사용자 찾기"""
-        stmt = select(UserModel).where(UserModel.email == email)
+        stmt = select(UserModel).where(UserModel.email == email.value)
         result = await self.session.execute(stmt)
         user_model = result.scalar_one_or_none()
 
@@ -87,9 +88,9 @@ class UserRepositoryImpl(UserRepository):
         await self.session.commit()
         return True
 
-    async def exists_by_email(self, email: str) -> bool:
+    async def exists_by_email(self, email: Email) -> bool:
         """이메일로 사용자 존재 여부 확인"""
-        stmt = select(UserModel).where(UserModel.email == email)
+        stmt = select(UserModel).where(UserModel.email == email.value)
         result = await self.session.execute(stmt)
         user_model = result.scalar_one_or_none()
         return user_model is not None
