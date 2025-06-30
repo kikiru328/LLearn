@@ -21,3 +21,18 @@ class CreateUserUseCaseResponse:
     is_admin: bool
     created_at: datetime
     updated_at: datetime
+    
+@dataclass
+class LoginUseCaseRequest:
+    """LoginUseCase 입력 DTO"""
+    email: str
+    password: str
+
+
+@dataclass
+class LoginUseCaseResponse:
+    """LoginUseCase 출력 DTO"""
+    user_id: UUID
+    email: str
+    nickname: str
+    access_token: str  # JWT 토큰
