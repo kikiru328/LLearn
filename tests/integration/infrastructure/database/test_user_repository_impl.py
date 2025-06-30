@@ -5,7 +5,7 @@ from infrastructure.database.repositories.user_repository_impl import UserReposi
 from domain.entities.user import User
 from domain.value_objects.email import Email
 from domain.value_objects.password import Password
-DUMMY = b"dummy_value"
+DUMMY = str(uuid4()).encode()
 
 class TestUserRepositoryImpl:
     """User Repository 통합 테스트 - 실제 DB 사용"""

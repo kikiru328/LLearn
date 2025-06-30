@@ -12,7 +12,7 @@ from domain.value_objects.password import Password
 from infrastructure.database.repositories import UserRepositoryImpl
 from infrastructure.database.repositories.curriculum_repository_impl import CurriculumRepositoryImpl
 
-DUMMY = b"dummy_value"
+DUMMY = str(uuid4()).encode()
 HASHED_PWD = bcrypt.hashpw(DUMMY, bcrypt.gensalt()).decode()
 
 class TestCurriculumRepositoryImpl:
