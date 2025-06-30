@@ -5,13 +5,15 @@ from infrastructure.database.repositories.user_repository_impl import UserReposi
 from domain.entities.user import User
 from domain.value_objects.email import Email
 from domain.value_objects.password import Password
-
+DUMMY = b"dummy_value"
 
 class TestUserRepositoryImpl:
     """User Repository 통합 테스트 - 실제 DB 사용"""
 
-    # 테스트용 해시된 비밀번호 (bcrypt로 "password123" 해시한 값)
-    DUMMY_HASH = bcrypt.hashpw(b"dummy_value", bcrypt.gensalt()).decode()
+    # 테스트용 해시된 비밀번호 (bcrypt로 "password123" 해시한 값)\
+        
+
+    HASHED_PWD = bcrypt.hashpw(DUMMY, bcrypt.gensalt()).decode()
 
     @pytest.mark.asyncio
     async def test_save_and_find_by_id(self, test_session):
@@ -22,7 +24,7 @@ class TestUserRepositoryImpl:
         user = User(
             email=Email(f"test-{unique_id}@example.com"),
             nickname=f"테스트유저-{unique_id}",
-            hashed_password=Password(self.DUMMY_HASH),
+            hashed_password=Password(self.HASHED_PWD),
             is_active=True,
             is_admin=False
         )
@@ -48,7 +50,7 @@ class TestUserRepositoryImpl:
         user = User(
             email=email,
             nickname="이메일테스트",
-            hashed_password=Password(self.DUMMY_HASH)
+            hashed_password=Password(self.HASHED_PWD)
         )
 
         # When
@@ -79,7 +81,7 @@ class TestUserRepositoryImpl:
         user = User(
             email=Email("delete@test.com"),
             nickname="삭제테스트",
-            hashed_password=Password(self.DUMMY_HASH)
+            hashed_password=Password(self.HASHED_PWD)
         )
         saved_user = await repository.save(user)
 
@@ -100,7 +102,7 @@ class TestUserRepositoryImpl:
         original_user = User(
             email=email,
             nickname="변환테스트",
-            hashed_password=Password(self.DUMMY_HASH),
+            hashed_password=Password(self.HASHED_PWD),
             is_active=True,
             is_admin=False
         )
