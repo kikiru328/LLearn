@@ -40,7 +40,7 @@ def sample_week_topics(sample_curriculum):
     """Mock WeekTopic 엔티티들 - sample_curriculum과 연결됨"""
     week_topic1 = Mock()
     week_topic1.id = uuid4()
-    week_topic1.curriculum_id = sample_curriculum.id  # ✅ 같은 ID 사용
+    week_topic1.curriculum_id = sample_curriculum.id  
     week_topic1.week_number = 1
     week_topic1.title = "1주차: 컴퓨터구조 기초"
     week_topic1.description = "컴퓨터의 기본 구조 학습"
@@ -50,7 +50,7 @@ def sample_week_topics(sample_curriculum):
     
     week_topic2 = Mock()
     week_topic2.id = uuid4()
-    week_topic2.curriculum_id = sample_curriculum.id  # ✅ 같은 ID 사용
+    week_topic2.curriculum_id = sample_curriculum.id  
     week_topic2.week_number = 2
     week_topic2.title = "2주차: 운영체제 기초"
     week_topic2.description = "운영체제 핵심 개념 학습"
@@ -60,7 +60,7 @@ def sample_week_topics(sample_curriculum):
     
     week_topic3 = Mock()
     week_topic3.id = uuid4()
-    week_topic3.curriculum_id = sample_curriculum.id  # ✅ 같은 ID 사용
+    week_topic3.curriculum_id = sample_curriculum.id  
     week_topic3.week_number = 3
     week_topic3.title = "3주차: 자료구조 기초"
     week_topic3.description = "기본 자료구조들 학습"
@@ -89,7 +89,7 @@ def public_week_topics(public_curriculum):
     """공개 커리큘럼의 주차들"""
     week_topic1 = Mock()
     week_topic1.id = uuid4()
-    week_topic1.curriculum_id = public_curriculum.id  # ✅ 공개 커리큘럼과 연결
+    week_topic1.curriculum_id = public_curriculum.id  
     week_topic1.week_number = 1
     week_topic1.title = "1주차: 파이썬 기초"
     week_topic1.description = "파이썬 기본 문법"
@@ -99,7 +99,7 @@ def public_week_topics(public_curriculum):
     
     week_topic2 = Mock()
     week_topic2.id = uuid4()
-    week_topic2.curriculum_id = public_curriculum.id  # ✅ 공개 커리큘럼과 연결
+    week_topic2.curriculum_id = public_curriculum.id  
     week_topic2.week_number = 2
     week_topic2.title = "2주차: 파이썬 고급"
     week_topic2.description = "파이썬 고급 기능들"
