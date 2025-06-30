@@ -1,6 +1,7 @@
 from typing import List
 from uuid import uuid4
 
+import bcrypt
 import pytest
 import pytest_asyncio
 
@@ -11,7 +12,7 @@ from domain.value_objects.password import Password
 from infrastructure.database.repositories import UserRepositoryImpl
 from infrastructure.database.repositories.curriculum_repository_impl import CurriculumRepositoryImpl
 
-TEST_PASSWORD = f"$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj5mIlz7PGuy"
+DUMMY_PWD = bcrypt.hashpw(b"dummy_value", bcrypt.gensalt()).decode()
 
 class TestCurriculumRepositoryImpl:
 
@@ -19,7 +20,7 @@ class TestCurriculumRepositoryImpl:
     async def test_user(self, test_session):
         """테스트용 user fixture"""
         unique_id = str(uuid4())
-        test_hashed_password = f"{TEST_PASSWORD}{unique_id}"
+        test_hashed_password = f"{DUMMY_PWD}{unique_id}"
         user = User(
             email=Email(f"test-{unique_id}@example.com"),
             nickname=f"테스트유저-{unique_id}",
@@ -31,7 +32,7 @@ class TestCurriculumRepositoryImpl:
     async def create_additional_user(self, test_session):
         """추가 사용자 생성용 helper method"""
         unique_id = str(uuid4())
-        test_hashed_password = f"{TEST_PASSWORD}{unique_id}"
+        test_hashed_password = f"{DUMMY_PWD}{unique_id}"
         user = User(
             email=Email(f"test-{unique_id}@example.com"),
             nickname=f"테스트유저-{unique_id}",
