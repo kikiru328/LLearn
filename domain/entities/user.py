@@ -21,7 +21,7 @@ class User:
         if not new_nickname or len(new_nickname.strip()) < 2:
             raise ValueError("닉네임은 2자 이상이어야 합니다.")
         self.nickname = new_nickname.strip()
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
 
     def activate(self) -> None:
         """activate"""
