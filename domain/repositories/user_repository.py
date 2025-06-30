@@ -30,6 +30,6 @@ class UserRepository(ABC):
         pass
 
     @abstractmethod
-    async def update_password(self, user_id: UUID, new_password: Password) -> None:
+    async def update_password(self, user_id: UUID, new_password: Password) -> bool:
         """비밀번호 변경"""
         pass
