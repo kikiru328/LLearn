@@ -36,3 +36,23 @@ class LoginUseCaseResponse:
     email: str
     nickname: str
     access_token: str  # JWT 토큰
+    
+
+@dataclass
+class GetUserProfileRequest:
+    """사용자 프로필 조회 요청"""
+    user_id: UUID
+
+@dataclass
+class GetUserProfileResponse:
+    """사용자 프로필 조회 응답"""
+    id: UUID
+    email: str
+    nickname: str
+    created_at: datetime
+    updated_at: datetime
+    
+    # 통계 정보 (선택)
+    curriculum_count: int = 0  # 만든 커리큘럼 수
+    summary_count: int = 0     # 작성한 요약 수
+            
