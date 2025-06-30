@@ -1,3 +1,4 @@
+import json
 import openai
 from typing import List
 
@@ -36,11 +37,73 @@ class OpenAILLMService(LLMService):
         )
         
         return response.choices[0].message.content
+
+    def _build_curriculum_prompt(self, goal: str, duration_weeks: int) -> str:
+        return f"""
+                    당신은 CS(Computer Science) 교육 전문가입니다.
+
+                    학습 목표: {goal}
+                    학습 기간: {duration_weeks}주
+
+                    OSSU(Open Source Society University) CS 커리큘럼 구조를 참고하여 체계적인 학습 계획을 생성해주세요:
+                    https://github.com/ossu/computer-science
+
+                    **핵심 원칙:**
+                    1. 기초 → 고급 순서 (Prerequisites 고려)
+                    2. Core CS 분야 포함: Programming, Math, Systems, Theory, Applications
+                    3. 한국 개발자 취업에 도움되는 실무 중심 구성
+                    4. 각 주차별로 명확한 학습 목표 설정
+
+                    **반드시 다음 JSON 형식으로만 응답해주세요:**
+                    {{
+                        "title": "구체적이고 매력적인 커리큘럼 제목",
+                        "weeks": [
+                            {{
+                                "week_number": 1,
+                                "title": "1주차: 구체적인 주제명",
+                                "learning_goals": ["구체적인 학습목표1", "구체적인 학습목표2", "구체적인 학습목표3"]
+                            }}
+                        ]
+                    }}
+
+                    **요구사항:**
+                    - 정확히 {duration_weeks}주차까지 생성
+                    - 각 주차 learning_goals는 2-4개 (너무 많지 않게)
+                    - 실무에서 바로 활용 가능한 내용 포함
+                    - JSON 외 다른 텍스트 절대 포함 금지
+
+                    예시 학습 목표: "프로세스와 스레드의 차이점 이해", "TCP/UDP 프로토콜 비교", "배열과 링크드리스트 구현"
+                """
     
     async def generate_curriculum(self, goal: str, duration_weeks: int = 12) -> dict:
         """학습 목표 기반 커리큘럼 생성"""
-        # TODO: 나중에 구현
-        return {"weeks": []}
+        prompt = self._build_curriculum_prompt(goal, duration_weeks)
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "당신은 CS 교육 전문가입니다. 반드시 JSON 형식으로만 응답하세요."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,  # 일관성을 위해 낮은 값
+                max_tokens=2000
+            )
+            content = response.choices[0].message.content.strip()
+            result = json.loads(content)
+            
+            # 기본 구조 검증
+            if "title" not in result or "weeks" not in result:
+                raise ValueError("응답에 필수 필드(title, weeks)가 없습니다")
+            
+            if len(result["weeks"]) != duration_weeks:
+                raise ValueError(f"요청한 {duration_weeks}주와 응답 주차 수가 다릅니다")
+            
+            return result
+            
+        except json.JSONDecodeError as e:
+            raise ValueError(f"LLM 응답을 JSON으로 파싱할 수 없습니다: {e}")
+        except Exception as e:
+            raise RuntimeError(f"커리큘럼 생성 중 오류 발생: {e}")
     
     def _build_feedback_prompt(
         self, 
