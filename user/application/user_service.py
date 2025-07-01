@@ -50,3 +50,27 @@ class UserService:
 
         await self.user_repo.save(user)
         return user
+
+    async def update_user(
+        self,
+        user_id: str,
+        name: str | None = None,
+        password: str | None = None,
+    ) -> User:
+        user = await self.user_repo.find_by_id(id=user_id)
+        updated_at = datetime.now(timezone.utc)
+
+        if name:
+            user.name = Name(name)
+            user.updated_at = updated_at
+        if password:
+            # validation
+            Password(password)
+            new_hashed_password = await anyio.to_thread.run_sync(
+                self.crypto.encrypt, password
+            )
+            user.password = new_hashed_password
+            user.updated_at = updated_at
+
+        await self.user_repo.update(user)
+        return user
