@@ -1,7 +1,5 @@
 import pytest
 from sqlalchemy import text
-from sqlalchemy.dialects.mssql.information_schema import columns
-
 from infrastructure.database.base import Base
 from infrastructure.database.config import sync_engine
 
