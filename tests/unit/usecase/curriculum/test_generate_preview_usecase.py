@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, AsyncMock
 
-from usecase.curriculum.generate_preview import GenerateCurriculumPreviewUseCase
+from usecase.curriculum.generate_curriculum_preview import GenerateCurriculumPreviewUseCase
 from usecase.dto.curriculum_dto import GeneratePreviewRequest, GeneratePreviewResponse
 
 @pytest.fixture
