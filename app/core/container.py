@@ -8,7 +8,7 @@ from infrastructure.database.repositories.user_repository_impl import UserReposi
 from infrastructure.database.repositories.week_topic_repository_impl import WeekTopicRepositoryImpl
 from infrastructure.services.bcrypt_password_service import BcryptPasswordService
 from infrastructure.services.openai_llm_service import OpenAILLMService
-from usecase.curriculum.generate_preview import GenerateCurriculumPreviewUseCase
+from usecase.curriculum.generate_curriculum_preview import GenerateCurriculumPreviewUseCase
 from usecase.curriculum.get_curriculum_detail import GetCurriculumDetailUseCase
 from usecase.curriculum.get_user_curriculums import GetUserCurriculumsUseCase
 from usecase.curriculum.get_week_topic import GetWeekTopicUseCase
