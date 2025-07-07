@@ -1,5 +1,4 @@
-import pytest
-from datetime import datetime, timezone
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from domain.entities.feedback import Feedback
@@ -19,10 +18,7 @@ class TestFeedback:
         📚 확장 학습: 다음은 IPC(Inter-Process Communication)에 대해 학습해보세요.
         """
 
-        feedback = Feedback(
-            summary_id=summary_id,
-            content=feedback_content
-        )
+        feedback = Feedback(summary_id=summary_id, content=feedback_content)
 
         assert isinstance(feedback.id, UUID)
         assert feedback.summary_id == summary_id

@@ -1,8 +1,6 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from domain.value_objects.email import Email
-from domain.value_objects.password import Password
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
@@ -11,12 +9,16 @@ class CreateUserRequest(BaseModel):
     nickname: str = Field(..., min_length=2, max_length=10, description="닉네임")
     password: str = Field(..., min_length=8, description="비밀번호")
 
+
 class LoginRequest(BaseModel):
     email: EmailStr = Field(..., description="이메일")
     password: str = Field(..., description="비밀번호")
-    
+
+
 class UpdateUserRequest(BaseModel):
-    nickname: Optional[str] = Field(None, min_length=2, max_length=10, description="닉네임")
+    nickname: Optional[str] = Field(
+        None, min_length=2, max_length=10, description="닉네임"
+    )
 
 
 class UserResponse(BaseModel):

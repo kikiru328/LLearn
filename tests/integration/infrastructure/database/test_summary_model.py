@@ -27,8 +27,8 @@ class TestSummaryModel:
             result = connection.execute(text("DESCRIBE summaries"))
         columns = {row[0]: row[1] for row in result}
 
-        assert 'id' in columns
-        assert 'user_id' in columns
-        assert 'week_topic_id' in columns
-        assert 'content' in columns
+        assert "id" in columns
+        assert "user_id" in columns
+        assert "week_topic_id" in columns
+        assert "content" in columns
         assert "is_public" in columns

@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timezone
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from domain.entities.curriculum import Curriculum
@@ -14,7 +14,7 @@ class TestCurriculum:
             user_id=user_id,
             title="CS 기초 학습",
             goal="컴퓨터 과학 기초를 익히자",
-            duration_weeks=12
+            duration_weeks=12,
         )
 
         assert isinstance(curriculum.id, UUID)
@@ -29,10 +29,7 @@ class TestCurriculum:
     def test_update_title_success(self):
         """커리큘럼 제목 수정 성공 테스트"""
         curriculum = Curriculum(
-            user_id=uuid4(),
-            title="원래 제목",
-            goal="목표",
-            duration_weeks=12
+            user_id=uuid4(), title="원래 제목", goal="목표", duration_weeks=12
         )
         old_updated_at = curriculum.updated_at
 
@@ -44,10 +41,7 @@ class TestCurriculum:
     def test_update_title_with_empty_string_raises_error(self):
         """커리큘럼 제목 실패 테스트: 비어 있을 경우"""
         curriculum = Curriculum(
-            user_id=uuid4(),
-            title="원래 제목",
-            goal="목표",
-            duration_weeks=12
+            user_id=uuid4(), title="원래 제목", goal="목표", duration_weeks=12
         )
 
         with pytest.raises(ValueError, match="커리큘럼 제목은 2자 이상이어야 합니다"):
@@ -56,10 +50,7 @@ class TestCurriculum:
     def test_update_title_with_short_string_raises_error(self):
         """커리큘럼 제목 실패 테스트: 짤은 경우"""
         curriculum = Curriculum(
-            user_id=uuid4(),
-            title="원래 제목",
-            goal="목표",
-            duration_weeks=12
+            user_id=uuid4(), title="원래 제목", goal="목표", duration_weeks=12
         )
 
         with pytest.raises(ValueError, match="커리큘럼 제목은 2자 이상이어야 합니다"):
@@ -68,10 +59,7 @@ class TestCurriculum:
     def test_make_public(self):
         """커리큘럼 공개 테스트"""
         curriculum = Curriculum(
-            user_id=uuid4(),
-            title="제목",
-            goal="목표",
-            duration_weeks=12
+            user_id=uuid4(), title="제목", goal="목표", duration_weeks=12
         )
         old_updated_at = curriculum.updated_at
 
@@ -87,7 +75,7 @@ class TestCurriculum:
             title="제목",
             goal="목표",
             duration_weeks=12,
-            is_public=True
+            is_public=True,
         )
         old_updated_at = curriculum.updated_at
 
