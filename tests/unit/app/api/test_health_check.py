@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 
-from app.api.health import router
+from app.api.health_check import router
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ class TestHealthCheck:
         response = client.get("/health")
         assert response.status_code == 200
 
-    def testr_basic_health_check_response_structure(self, client: TestClient) -> None:
+    def test_basic_health_check_response_structure(self, client: TestClient) -> None:
         response = client.get("/health")
         data = response.json()
 
