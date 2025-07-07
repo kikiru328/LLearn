@@ -1,7 +1,7 @@
 from fastapi import FastAPI  # clean architectgure Framework layer
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.errors import register_exception_handlers
-from app.api.health import router as health_router
+from app.api.health_check import router as health_router
 
 print(f"Health router: {health_router}")
 print(f"Health router routes: {health_router.routes}")
