@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timezone
+from datetime import datetime
 from uuid import UUID, uuid4
 
 from domain.entities.summary import Summary
@@ -15,7 +15,7 @@ class TestSummary:
         summary = Summary(
             user_id=user_id,
             week_topic_id=week_topic_id,
-            content="이번 주에 배운 내용을 정리하면 다음과 같습니다."
+            content="이번 주에 배운 내용을 정리하면 다음과 같습니다.",
         )
 
         assert isinstance(summary.id, UUID)
@@ -29,9 +29,7 @@ class TestSummary:
     def test_update_content_success(self):
         """내용 변경 성공 테스트"""
         summary = Summary(
-            user_id=uuid4(),
-            week_topic_id=uuid4(),
-            content="원래 요약 내용입니다."
+            user_id=uuid4(), week_topic_id=uuid4(), content="원래 요약 내용입니다."
         )
         old_updated_at = summary.updated_at
 
@@ -43,9 +41,7 @@ class TestSummary:
     def test_update_content_with_empty_string_raises_error(self):
         """내용 변경 실패 테스트: 빈 내용 제출"""
         summary = Summary(
-            user_id=uuid4(),
-            week_topic_id=uuid4(),
-            content="원래 요약 내용입니다."
+            user_id=uuid4(), week_topic_id=uuid4(), content="원래 요약 내용입니다."
         )
 
         with pytest.raises(ValueError, match="요약 내용은 10자 이상이어야 합니다"):
@@ -54,9 +50,7 @@ class TestSummary:
     def test_update_content_with_short_string_raises_error(self):
         """내용 변경 실패 테스트: 짧은 내용 제출"""
         summary = Summary(
-            user_id=uuid4(),
-            week_topic_id=uuid4(),
-            content="원래 요약 내용입니다."
+            user_id=uuid4(), week_topic_id=uuid4(), content="원래 요약 내용입니다."
         )
 
         with pytest.raises(ValueError, match="요약 내용은 10자 이상이어야 합니다"):
@@ -65,9 +59,7 @@ class TestSummary:
     def test_make_public(self):
         """요약 공개 설정 테스트"""
         summary = Summary(
-            user_id=uuid4(),
-            week_topic_id=uuid4(),
-            content="요약 내용입니다."
+            user_id=uuid4(), week_topic_id=uuid4(), content="요약 내용입니다."
         )
         old_updated_at = summary.updated_at
 
@@ -82,7 +74,7 @@ class TestSummary:
             user_id=uuid4(),
             week_topic_id=uuid4(),
             content="요약 내용입니다.",
-            is_public=True
+            is_public=True,
         )
         old_updated_at = summary.updated_at
 
