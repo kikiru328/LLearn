@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     service_name: str = "LLearn API"
     service_version: str = "1.0.0"
     model_config = SettingsConfigDict(env_file=".env", extra="allow")
+    database_url: str = ""
 
 
 settings = Settings()
