@@ -1,10 +1,8 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.engine import create_engine
-from dotenv import load_dotenv
+from app.core.config import settings
 import os
 
-# .env 파일 읽기
-load_dotenv()
 
 # 환경 확인
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
@@ -12,26 +10,30 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 # 환경별 설정
 if ENVIRONMENT == "testing":
     DB_NAME = "llearn_test"
-    DB_HOST = "localhost"  # pytest는 Docker 외부에서 실행
+    DATABASE_URL = f"mysql+pymysql://root:{os.getenv('MYSQL_ROOT_PASSWORD')}@localhost:3306/llearn_test"
+    sync_engine = create_engine(DATABASE_URL.replace("aiomysql", "pymysql"))
+    async_engine = None
+    SessionLocal = None
 else:
-    DB_NAME = os.getenv('MYSQL_DATABASE', 'llearn_dev')
-    DB_HOST = "mysql"      # Docker 내부에서는 서비스명
+    DATABASE_URL = settings.database_url
+    async_database_url = DATABASE_URL.replace("pymysql", "aiomysql")
 
-# 데이터베이스 URL 만들기
-DATABASE_URL = f"mysql+aiomysql://root:{os.getenv('MYSQL_ROOT_PASSWORD')}@{DB_HOST}:3306/{DB_NAME}"
-
-# 엔진 만들기
-async_engine = create_async_engine(DATABASE_URL, echo=True)
-
-# for test in sync
-sync_engine = create_engine(DATABASE_URL.replace("aiomysql", "pymysql"))
-
-# 세션 팩토리 만들기
-SessionLocal = async_sessionmaker(bind=async_engine)
+    # 비동기 엔진 생성
+    async_engine = create_async_engine(async_database_url, echo=True)
+    sync_engine = create_engine(DATABASE_URL)
+    SessionLocal = async_sessionmaker(bind=async_engine)  # Docker 내부에서는 서비스명
 
 # 세션 가져오는 함수
+
+
 def get_db_session():
-    session = SessionLocal()
+    if ENVIRONMENT == "testing":
+        from sqlalchemy.orm import sessionmaker
+
+        TestSession = sessionmaker(bind=sync_engine)
+        session = TestSession()
+    else:
+        session = SessionLocal()
     try:
         yield session
     finally:
