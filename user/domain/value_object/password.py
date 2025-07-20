@@ -1,0 +1,2 @@
+class Password:
+    pass
