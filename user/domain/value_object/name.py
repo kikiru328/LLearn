@@ -3,7 +3,7 @@ import re
 from typing import Any
 
 # 영문 대소문자·숫자·밑줄만 2~8자
-_NAME_RE = re.compile(r"^[A-Za-z0-9_]{2,8}$")
+_NAME_RE = re.compile(r"^[A-Za-z0-9_\uAC00-\uD7A3]{2,8}$")  # 한글 음절(가–힣) 추
 
 
 class Name:

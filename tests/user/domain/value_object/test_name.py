@@ -34,3 +34,8 @@ def test_invalid_name_raises_value_error(raw):
 def test_name_equality_and_hash():
     assert Name("Alice") == Name("Alice")
     assert {Name("Bob_1")} == {Name("Bob_1")}
+
+
+@pytest.mark.parametrize("raw", ["피칸", "한글123", "홍길동_1"])
+def test_valid_name_with_korean(raw):
+    assert str(Name(raw)) == raw
