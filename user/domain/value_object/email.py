@@ -2,7 +2,8 @@
 import re
 from typing import Any
 
-_SIMPLE_EMAIL_RE = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
+# _SIMPLE_EMAIL_RE = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
+_SIMPLE_EMAIL_RE = re.compile(r"^\S+@\S+\.\S+$")
 
 
 class Email:

@@ -31,3 +31,9 @@ def test_invalid_email_raises_value_error(raw) -> None:
 def test_email_equlity():
     assert Email("A@b.com") == Email("a@B.com")
     assert {Email("x@y.com")} == {Email("X@Y.COM")}
+
+
+@pytest.mark.parametrize("raw", ["test@ example.com", "foo\n@bar.com"])
+def test_email_rejects_whitespace(raw):
+    with pytest.raises(ValueError):
+        Email(raw)
