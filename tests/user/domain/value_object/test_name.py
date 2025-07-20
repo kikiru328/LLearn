@@ -1,5 +1,5 @@
 import pytest
-from user.domain.value_object.name import Name  # ← 아직 없음
+from user.domain.value_object.name import Name
 
 
 @pytest.mark.parametrize(
