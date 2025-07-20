@@ -1,6 +1,6 @@
 import re
 from ulid import ULID
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from user.domain.entity.user import User
 from user.domain.value_object.email import Email
 from user.domain.value_object.name import Name

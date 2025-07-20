@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-import pytest
 from ulid import ULID
 
 from user.domain.repository.user_repo import IUserRepository
@@ -11,7 +10,7 @@ from user.domain.value_object.name import Name
 class InMemoryUserRepo(IUserRepository):  # 임시 Stub, Implemenation
     def __init__(self) -> None:
         self._by_id: dict[str, User] = {}
-        self._by_email: dict[str, User] = {}
+        self._by_email: dict[Email, User] = {}
 
     def save(self, user: User):
         if user.id in self._by_id or user.email in self._by_email:
@@ -22,7 +21,7 @@ class InMemoryUserRepo(IUserRepository):  # 임시 Stub, Implemenation
     def find_by_id(self, id: str):
         return self._by_id.get(id)
 
-    def find_by_email(self, email: str):
+    def find_by_email(self, email: Email):
         return self._by_email.get(email)
 
 
