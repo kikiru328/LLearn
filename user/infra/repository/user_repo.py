@@ -5,6 +5,7 @@ from user.application.exception import UserNotFoundError
 from user.domain.entity.user import User as UserDomain
 from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.name import Name
+from user.domain.value_object.role import RoleVO
 from user.infra.db_models.user import User as UserModel
 
 from user.domain.value_object.email import Email
@@ -21,6 +22,7 @@ class UserRepository(IUserRepository):
             email=str(user.email),
             name=str(user.name),
             password=user.password,
+            role=user.role,
             created_at=user.created_at,
             updated_at=user.updated_at,
         )
@@ -40,6 +42,7 @@ class UserRepository(IUserRepository):
             email=Email(user.email),
             name=Name(user.name),
             password=user.password,
+            role=RoleVO(user.role),
             created_at=user.created_at,
             updated_at=user.updated_at,
         )
@@ -49,12 +52,14 @@ class UserRepository(IUserRepository):
         response = await self.session.execute(query)
         user = response.scalars().first()
         if not user:
-            raise UserNotFoundError(f"user with email={email} not found")  # 없으면 none
+            # raise UserNotFoundError(f"user with email={email} not found")  # 없으면 none
+            return None  # 없으면 None, 예외가 되지 않음
         return UserDomain(
             id=user.id,
             email=Email(user.email),
             name=Name(user.name),
             password=user.password,
+            role=RoleVO(user.role),
             created_at=user.created_at,
             updated_at=user.updated_at,
         )
@@ -68,6 +73,7 @@ class UserRepository(IUserRepository):
 
         existing_user.name = str(user.name)
         existing_user.password = user.password
+        existing_user.role = user.role
         existing_user.updated_at = user.updated_at
 
         self.session.add(existing_user)
@@ -100,6 +106,7 @@ class UserRepository(IUserRepository):
                 email=Email(user_model.email),
                 name=Name(user_model.name),
                 password=user_model.password,
+                role=RoleVO(user_model.role),
                 created_at=user_model.created_at,
                 updated_at=user_model.updated_at,
             )

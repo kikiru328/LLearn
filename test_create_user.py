@@ -4,6 +4,7 @@ from ulid import ULID
 from datetime import datetime, timezone
 from faker import Faker
 
+from user.domain.value_object.role import RoleVO
 from user.infra.db_models.user import User as UserModel
 from user.domain.entity.user import User as UserDomain
 from user.domain.value_object.email import Email
@@ -31,7 +32,7 @@ AsyncSessionLocal = async_sessionmaker(
 fake = Faker()
 
 
-async def seed_users(count: int = 50):
+async def seed_users(count: int = 5):
     crypto = Crypto()
     ulid_gen = ULID()
     async with AsyncSessionLocal() as session:
@@ -61,6 +62,7 @@ async def seed_users(count: int = 50):
                 email=Email(email_str),
                 name=name_vo,
                 password=pw_hash,
+                role=RoleVO.USER,
                 created_at=now,
                 updated_at=now,
             )
@@ -71,6 +73,7 @@ async def seed_users(count: int = 50):
                 email=str(domain_user.email),
                 name=str(domain_user.name),
                 password=domain_user.password,
+                role=domain_user.role,
                 created_at=domain_user.created_at,
                 updated_at=domain_user.updated_at,
             )

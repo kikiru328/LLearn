@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     database_password: str = ""
     database_url: str = ""
     sqlalchemy_database_url: str = ""
+    secret_key: str = ""
+    algorithm: str = ""
 
 
 @lru_cache
