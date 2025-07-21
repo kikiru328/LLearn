@@ -13,14 +13,21 @@ from user.interface.exception_handler import (
     duplicate_email_handler,
     validation_exception_handler,
 )
-from user.interface.controllers.user_controller import (
-    get_user_service,
-    router as user_routers,
-)
+from user.interface.controllers.user_controller import router as user_routers
+from DI.containers import Container
+from dependency_injector import providers
 
 
 @pytest.fixture
-def app() -> FastAPI:
+def di_container() -> Container:
+    container = Container()
+    # 컨트롤러 모듈을 명시적으로 와이어
+    container.wire(modules=["user.interface.controllers.user_controller"])
+    return container
+
+
+@pytest.fixture
+def app(di_container: Container) -> FastAPI:
     app = FastAPI()
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(DuplicateEmailError, duplicate_email_handler)
@@ -36,23 +43,21 @@ async def async_client(app: FastAPI):
 
 
 @pytest.mark.asyncio
-async def test_create_user_success(app: FastAPI, async_client: AsyncClient):
-    # -- StubUser 정의 (도메인 유저 흉내)
+async def test_create_user_success(
+    di_container: Container,
+    async_client: AsyncClient,
+):
     class StubUser:
         id = "01TESTID1234567890"
         name = Name("tester")
         email = Email("test@example.com")
         created_at = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
-    async def fake_create_user(name, email, password):
-        return StubUser()
+    class StubService:
+        async def create_user(self, name, email, password):
+            return StubUser()
 
-    stub_service = type("Svc", (), {})()
-    stub_service.create_user = fake_create_user
-
-    app.dependency_overrides[get_user_service] = (
-        lambda: stub_service
-    )  # no user_service, use stub_service
+    di_container.user_service.override(providers.Factory(StubService))
 
     response = await async_client.post(
         "/users",
@@ -73,17 +78,15 @@ async def test_create_user_success(app: FastAPI, async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_create_user_duplicate_email(
-    app: FastAPI,
+    di_container: Container,
     async_client: AsyncClient,
 ):
 
-    async def fake_create_user(name, email, password):
-        raise DuplicateEmailError()
+    class StubService:
+        async def create_user(self, name, email, password):
+            raise DuplicateEmailError()
 
-    stub_service = type("Svc", (), {})()
-    stub_service.create_user = fake_create_user
-
-    app.dependency_overrides[get_user_service] = lambda: stub_service
+    di_container.user_service.override(providers.Factory(StubService))
 
     response = await async_client.post(
         "/users",
