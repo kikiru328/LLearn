@@ -17,14 +17,14 @@ router = APIRouter(prefix="/users", tags=["users"])
 @router.post("", status_code=201, response_model=CreateUserResponse)
 @inject  # dependency inject
 async def create_user(
-    body: CreateUserBody,
+    user: CreateUserBody,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
 
     created_user = await user_service.create_user(
-        name=body.name,
-        email=body.email,
-        password=body.password,
+        name=user.name,
+        email=user.email,
+        password=user.password,
     )
     return CreateUserResponse.from_domain(created_user)
 

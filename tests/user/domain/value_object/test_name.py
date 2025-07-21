@@ -9,6 +9,7 @@ from user.domain.value_object.name import Name
         ("Alice", "Alice"),
         ("Bob_1", "Bob_1"),
         ("AbcDefGh", "AbcDefGh"),
+        ("A" * 32, "A" * 32),
     ],
 )
 def test_valid_name_kept_as_is(raw, expected):
@@ -19,7 +20,7 @@ def test_valid_name_kept_as_is(raw, expected):
     "raw",
     [
         "A",  # 1자
-        "AbcDefGhi",  # 9자
+        "A" * 33,  # 33자
         "John Doe",  # 공백
         "Alice-1",  # 허용되지 않은 특수문자
         "Bob!",  # 허용되지 않은 특수문자

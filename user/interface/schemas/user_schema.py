@@ -1,20 +1,20 @@
 from datetime import datetime
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 from user.domain.entity.user import User
 
 
 class CreateUserBody(BaseModel):
-    name: str
-    email: str
-    password: str
+    name: str = Field(min_length=2, max_length=32)
+    email: EmailStr = Field(max_length=64)
+    password: str = Field(min_length=8, max_length=64)
 
 
 class CreateUserResponse(BaseModel):
     id: str
-    name: str
-    email: str
+    name: str = Field(min_length=2, max_length=32)
+    email: EmailStr = Field(max_length=64)
     created_at: datetime
 
     @classmethod
@@ -28,14 +28,14 @@ class CreateUserResponse(BaseModel):
 
 
 class UpdateUser(BaseModel):
-    name: str | None = None
-    password: str | None = None
+    name: str | None = Field(min_length=2, max_length=32, default=None)
+    password: str | None = Field(min_length=8, max_length=64, default=None)
 
 
 class UpdateUserResponse(BaseModel):
     id: str
-    name: str
-    email: str
+    name: str = Field(min_length=2, max_length=32)
+    email: EmailStr = Field(max_length=64)
     updated_at: datetime
 
     @classmethod
@@ -50,8 +50,8 @@ class UpdateUserResponse(BaseModel):
 
 class UserResponse(BaseModel):
     id: str
-    name: str
-    email: str
+    name: str = Field(min_length=2, max_length=32)
+    email: EmailStr = Field(max_length=64)
     created_at: datetime
     updated_at: datetime
 
