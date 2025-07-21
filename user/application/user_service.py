@@ -12,10 +12,16 @@ from utils.crypto import Crypto
 
 
 class UserService:
-    def __init__(self):
-        self.user_repo: IUserRepository = UserRepository()
-        self.ulid = ULID()
-        self.crypto = Crypto()
+    def __init__(
+        self,
+        user_repo: IUserRepository = UserRepository(),
+        ulid: ULID = ULID(),
+        crypto: Crypto = Crypto(),
+    ):
+
+        self.user_repo = user_repo
+        self.ulid = ulid
+        self.crypto = crypto
 
     async def create_user(
         self,
@@ -24,7 +30,8 @@ class UserService:
         password: str,
         created_at: datetime | None = None,
     ):
-        created_at = created_at or datetime.now(timezone.utc)
+
+        created_at = created_at or datetime.now(timezone.utc)  # 만들어진 날짜는 자동
 
         # duplicate?
         if await self.user_repo.find_by_email(Email(email)):

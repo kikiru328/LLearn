@@ -36,7 +36,7 @@ async def test_create_user_sucess():
     user_mock_repo = InMemoryUserRepo()
     crypto = Crypto()
 
-    user_service = UserService(user_mock_repo, crypto)
+    user_service = UserService(user_repo=user_mock_repo, crypto=crypto)
 
     now = datetime(2025, 1, 1, tzinfo=timezone.utc)
     mock_user = await user_service.create_user(
@@ -55,7 +55,7 @@ async def test_create_user_sucess():
 async def test_create_user_duplicate_email():
     user_mock_repo = InMemoryUserRepo()
     crypto = Crypto()
-    user_service = UserService(user_mock_repo, crypto)
+    user_service = UserService(user_repo=user_mock_repo, crypto=crypto)
 
     # 선행 사용자 등록
     await user_service.create_user(
