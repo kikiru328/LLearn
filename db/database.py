@@ -13,6 +13,7 @@ engine = create_async_engine(
     settings.sqlalchemy_database_url,
     echo=True,
     future=True,
+    connect_args={"charset": "utf8mb4"},
 )
 
 AsyncSessionLocal = async_sessionmaker(

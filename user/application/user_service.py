@@ -7,14 +7,13 @@ from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.email import Email
 from user.domain.value_object.name import Name
 from user.domain.value_object.password import Password
-from user.infra.repository.user_repo import UserRepository
 from utils.crypto import Crypto
 
 
 class UserService:
     def __init__(
         self,
-        user_repo: IUserRepository = UserRepository(),
+        user_repo: IUserRepository,
         ulid: ULID = ULID(),
         crypto: Crypto = Crypto(),
     ):
