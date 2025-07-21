@@ -1,3 +1,4 @@
+from typing import Optional
 import pytest
 from datetime import datetime, timezone
 from user.domain.entity.user import User
@@ -5,7 +6,7 @@ from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.email import Email
 
 from user.application.user_service import UserService
-from user.application.exception import DuplicateEmailError
+from user.application.exception import DuplicateEmailError, UserNotFoundError
 
 from utils.crypto import Crypto
 
@@ -22,11 +23,20 @@ class InMemoryUserRepo(IUserRepository):
         self._by_id[user.id] = user
         self._by_email[user.email] = user
 
-    async def find_by_id(self, id: str) -> User | None:
-        return self._by_id.get(id)
+    async def find_by_id(self, id: str) -> Optional[User]:
+        return self._by_id[id]
 
-    async def find_by_email(self, email: Email) -> User | None:
+    async def find_by_email(self, email: Email) -> Optional[User]:
         return self._by_email.get(email)
+
+    async def update(self, user: User) -> None:
+        if user.id not in self._by_id:
+            raise UserNotFoundError(f"{id} not found")
+        self._by_id[user.id] = user
+        self._by_email[user.email] = user
+
+    async def get_users(self):
+        return list(self._by_id.values())
 
 
 pytestmark = pytest.mark.asyncio

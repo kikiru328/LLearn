@@ -1,10 +1,8 @@
 # tests/user/infra/test_user_repository.py
 import pytest
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from db.database import Base
-from user.infra.db_models.user import User as UserModel
 from user.infra.repository.user_repo import UserRepository
 from user.domain.entity.user import User as DomainUser
 from user.domain.value_object.email import Email
@@ -15,12 +13,15 @@ from datetime import datetime, timezone
 @pytest_asyncio.fixture(scope="module")  # 수정: pytest_asyncio.fixture 사용
 async def sqlite_session():
     engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:", echo=False, future=True
+        "sqlite+aiosqlite:///:memory:",
+        echo=False,
+        future=True,
     )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    AsyncSessionLocal = sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
+    AsyncSessionLocal = async_sessionmaker(
+        engine,
+        expire_on_commit=False,
     )
     async_session = AsyncSessionLocal()
     yield async_session

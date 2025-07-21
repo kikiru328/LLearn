@@ -24,6 +24,15 @@ class InMemoryUserRepo(IUserRepository):  # 임시 Stub, Implemenation
     def find_by_email(self, email: Email):
         return self._by_email.get(email)
 
+    def update(self, user: User):
+        if user.id not in self._by_id:
+            return None
+        self._by_id[user.id] = user
+        self._by_email[user.email] = user
+
+    def get_users(self):
+        return list(self._by_id.values())
+
 
 def test_save_and_find():
     fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
