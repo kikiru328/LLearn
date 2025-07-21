@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends
 from dependency_injector.wiring import inject, Provide
 from user.application.user_service import UserService
-from user.interface.schemas.user_schema import CreateUserBody, CreateUserResponse
+from user.interface.schemas.user_schema import (
+    CreateUserBody,
+    CreateUserResponse,
+    GetUsersPageResponse,
+    UserResponse,
+)
 from user.interface.schemas.user_schema import UpdateUser, UpdateUserResponse
 
 from DI.containers import Container
@@ -37,3 +42,21 @@ async def update_user(
         password=user.password,
     )
     return UpdateUserResponse.from_domain(updated_user)
+
+
+@router.get("", status_code=200, response_model=GetUsersPageResponse)
+@inject
+async def get_users(
+    page: int = 1,
+    items_per_page: int = 18,
+    user_service: UserService = Depends(Provide[Container.user_service]),
+):
+    total_count, domain_users = await user_service.get_users(page, items_per_page)
+    users = [UserResponse.from_domain(u) for u in domain_users]
+
+    return GetUsersPageResponse.from_domain(
+        total_count=total_count,
+        page=page,
+        items_per_page=items_per_page,
+        users=users,
+    )

@@ -1,7 +1,7 @@
 import anyio
 from ulid import ULID
 from datetime import datetime, timezone
-from user.application.exception import DuplicateEmailError
+from user.application.exception import DuplicateEmailError, UserNotFoundError
 from user.domain.entity.user import User
 from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.email import Email
@@ -58,6 +58,10 @@ class UserService:
         password: str | None = None,
     ) -> User:
         user = await self.user_repo.find_by_id(id=user_id)
+
+        if user is None:
+            raise UserNotFoundError(f"{user_id} user not found")
+
         updated_at = datetime.now(timezone.utc)
 
         if name:
@@ -74,3 +78,7 @@ class UserService:
 
         await self.user_repo.update(user)
         return user
+
+    async def get_users(self, page: int, items_per_page: int) -> tuple[int, list[User]]:
+        users = await self.user_repo.get_users(page, items_per_page)
+        return users

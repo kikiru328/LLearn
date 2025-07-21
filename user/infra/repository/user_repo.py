@@ -1,4 +1,5 @@
-from sqlalchemy import select
+from typing import Optional
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from user.application.exception import UserNotFoundError
 from user.domain.entity.user import User as UserDomain
@@ -30,6 +31,34 @@ class UserRepository(IUserRepository):
             await self.session.rollback()
             raise
 
+    async def find_by_id(self, id: str) -> Optional[UserDomain]:
+        user = await self.session.get(UserModel, id)
+        if not user:
+            raise UserNotFoundError(f"user with id = {id} not found")  # 없으면 none
+        return UserDomain(
+            id=user.id,
+            email=Email(user.email),
+            name=Name(user.name),
+            password=user.password,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
+
+    async def find_by_email(self, email: Email) -> Optional[UserDomain]:
+        query = select(UserModel).where(UserModel.email == str(email))
+        response = await self.session.execute(query)
+        user = response.scalars().first()
+        if not user:
+            raise UserNotFoundError(f"user with email={email} not found")  # 없으면 none
+        return UserDomain(
+            id=user.id,
+            email=Email(user.email),
+            name=Name(user.name),
+            password=user.password,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
+
     async def update(self, user: UserDomain):
         existing_user: UserModel | None = await self.session.get(
             UserModel, user.id
@@ -48,30 +77,32 @@ class UserRepository(IUserRepository):
             await self.session.rollback()
             raise
 
-    async def find_by_id(self, id: str) -> UserDomain | None:
-        user = await self.session.get(UserModel, id)
-        if not user:
-            raise UserNotFoundError(f"user with id = {id} not found")  # 없으면 none
-        return UserDomain(
-            id=user.id,
-            email=Email(user.email),
-            name=Name(user.name),
-            password=user.password,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-        )
+    async def get_users(
+        self,
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> tuple[int, list[UserDomain]]:
 
-    async def find_by_email(self, email: Email) -> UserDomain | None:
-        query = select(UserModel).where(UserModel.email == str(email))
-        response = await self.session.execute(query)
-        user = response.scalars().first()
-        if not user:
-            raise UserNotFoundError(f"user with email={email} not found")  # 없으면 none
-        return UserDomain(
-            id=user.id,
-            email=Email(user.email),
-            name=Name(user.name),
-            password=user.password,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-        )
+        # total count
+        count_query = select(func.count()).select_from(UserModel)
+        count_result = await self.session.execute(count_query)
+        total_count = count_result.scalar_one()
+
+        # paging
+        offset = (page - 1) * items_per_page
+
+        query = select(UserModel).offset(offset).limit(items_per_page)
+        result = await self.session.execute(query)
+        user_models = result.scalars().all()
+        users = [
+            UserDomain(
+                id=user_model.id,
+                email=Email(user_model.email),
+                name=Name(user_model.name),
+                password=user_model.password,
+                created_at=user_model.created_at,
+                updated_at=user_model.updated_at,
+            )
+            for user_model in user_models
+        ]
+        return (total_count, users)

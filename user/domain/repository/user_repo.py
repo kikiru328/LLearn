@@ -15,9 +15,13 @@ class IUserRepository(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_by_email(self, email: Email):
+    async def find_by_email(self, email: Email) -> Optional[User]:
         raise NotImplementedError
 
     @abstractmethod
-    async def update(self, user: User):
+    async def update(self, user: User) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_users(self, page: int, items_per_page: int) -> tuple[int, list[User]]:
         raise NotImplementedError
