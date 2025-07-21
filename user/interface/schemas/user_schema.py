@@ -5,36 +5,6 @@ from pydantic import BaseModel, EmailStr, Field
 from user.domain.entity.user import User
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    role: str
-
-
-class CreateUserBody(BaseModel):
-    name: str = Field(min_length=2, max_length=32)
-    email: EmailStr = Field(max_length=64)
-    password: str = Field(min_length=8, max_length=64)
-
-
-class CreateUserResponse(BaseModel):
-    id: str
-    name: str = Field(min_length=2, max_length=32)
-    email: EmailStr = Field(max_length=64)
-    role: str
-    created_at: datetime
-
-    @classmethod
-    def from_domain(cls, user: User) -> "CreateUserResponse":
-        return cls(
-            id=user.id,
-            name=str(user.name),
-            email=str(user.email),
-            role=user.role.value,
-            created_at=user.created_at,
-        )
-
-
 class UpdateUserBody(BaseModel):
     name: str | None = None
     password: str | None = None

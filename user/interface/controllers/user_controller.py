@@ -1,14 +1,11 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from dependency_injector.wiring import inject, Provide
-from fastapi.security import OAuth2PasswordRequestForm
+
 from common.auth import CurrentUser, get_current_user, Role
 from user.application.user_service import UserService
 from user.interface.schemas.user_schema import (
-    CreateUserBody,
-    CreateUserResponse,
     GetUsersPageResponse,
-    TokenResponse,
     UserResponse,
 )
 from user.interface.schemas.user_schema import UpdateUserBody, UpdateUserResponse
@@ -16,35 +13,6 @@ from user.interface.schemas.user_schema import UpdateUserBody, UpdateUserRespons
 from DI.containers import Container
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-@router.post("/login", response_model=TokenResponse)
-@inject
-async def login(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    user_service: UserService = Depends(Provide[Container.user_service]),
-):
-    access_token, role = await user_service.login(
-        email=form_data.username,
-        password=form_data.password,
-    )
-    return TokenResponse(access_token=access_token, role=role.value)
-
-
-# 회원가입 (stranger, admin)
-@router.post("", status_code=201, response_model=CreateUserResponse)
-@inject  # dependency inject
-async def create_user(
-    user: CreateUserBody,
-    user_service: UserService = Depends(Provide[Container.user_service]),
-):
-
-    created_user = await user_service.create_user(
-        name=user.name,
-        email=user.email,
-        password=user.password,
-    )
-    return CreateUserResponse.from_domain(created_user)
 
 
 # 수정 (user)
@@ -73,9 +41,6 @@ async def get_users(
     items_per_page: int = 18,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
-    print("#############################")
-    print(current_user.role)
-    print("#############################")
     if current_user.role is not Role.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="관리자만 접근이 가능합니다."
