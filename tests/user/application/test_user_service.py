@@ -15,54 +15,57 @@ class InMemoryUserRepo(IUserRepository):
         self._by_id: dict[str, User] = {}
         self._by_email: dict[Email, User] = {}
 
-    def save(self, user: User):
+    async def save(self, user: User) -> None:
         if user.id in self._by_id or user.email in self._by_email:
             raise ValueError("duplicate user")
 
         self._by_id[user.id] = user
         self._by_email[user.email] = user
 
-    def find_by_id(self, id: str):
+    async def find_by_id(self, id: str) -> User | None:
         return self._by_id.get(id)
 
-    def find_by_email(self, email: Email):
+    async def find_by_email(self, email: Email) -> User | None:
         return self._by_email.get(email)
 
 
-def test_create_user_sucess():
+pytestmark = pytest.mark.asyncio
+
+
+async def test_create_user_sucess():
     user_mock_repo = InMemoryUserRepo()
     crypto = Crypto()
 
     user_service = UserService(user_mock_repo, crypto)
 
     now = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    mock_user = user_service.create_user(
+    mock_user = await user_service.create_user(
         email="pecan@gmail.com",
         name="피칸",
         password="Aa1!aaaa",
         created_at=now,
     )
 
-    assert user_mock_repo.find_by_id(mock_user.id) == mock_user
+    assert await user_mock_repo.find_by_id(mock_user.id) == mock_user
     assert crypto.verify("Aa1!aaaa", mock_user.password)
     assert mock_user.created_at == now and mock_user.updated_at == now
     assert mock_user.id.startswith("01")
 
 
-def test_create_user_duplicate_email():
+async def test_create_user_duplicate_email():
     user_mock_repo = InMemoryUserRepo()
     crypto = Crypto()
     user_service = UserService(user_mock_repo, crypto)
 
     # 선행 사용자 등록
-    user_service.create_user(
+    await user_service.create_user(
         email="dup@gmail.com",
         name="User1",
         password="Aa1!aaaa",
     )
 
     with pytest.raises(DuplicateEmailError):
-        user_service.create_user(
+        await user_service.create_user(
             email="dup@gmail.com",
             name="User2",
             password="Bb2@bbbb",

@@ -6,13 +6,13 @@ from user.domain.value_object.email import Email
 
 class IUserRepository(metaclass=ABCMeta):
     @abstractmethod
-    def save(self, user: User) -> None:
+    async def save(self, user: User) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def find_by_id(self, id: str):
+    async def find_by_id(self, id: str):
         raise NotImplementedError
 
     @abstractmethod
-    def find_by_email(self, email: Email):
+    async def find_by_email(self, email: Email):
         raise NotImplementedError

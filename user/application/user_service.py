@@ -1,3 +1,4 @@
+import anyio
 from ulid import ULID
 from datetime import datetime, timezone
 from user.application.exception import DuplicateEmailError
@@ -18,7 +19,7 @@ class UserService:
         self.user_repo = user_repo
         self.crypto = crypto
 
-    def create_user(
+    async def create_user(
         self,
         email: str,
         name: str,
@@ -28,11 +29,11 @@ class UserService:
         created_at = created_at or datetime.now(timezone.utc)
 
         # duplicate?
-        if self.user_repo.find_by_email(Email(email)):
+        if await self.user_repo.find_by_email(Email(email)):
             raise DuplicateEmailError
 
         Password(password)
-        hashed_password = self.crypto.encrypt(password)
+        hashed_password = await anyio.to_thread.run_sync(self.crypto.encrypt, password)
 
         user = User(
             id=ULID().generate(),
@@ -43,5 +44,5 @@ class UserService:
             updated_at=created_at,
         )
 
-        self.user_repo.save(user)
+        await self.user_repo.save(user)
         return user
