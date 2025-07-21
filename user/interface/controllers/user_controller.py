@@ -60,3 +60,12 @@ async def get_users(
         items_per_page=items_per_page,
         users=users,
     )
+
+
+@router.delete("", status_code=204)
+@inject
+async def delete_user(
+    user_id: str,
+    user_service: UserService = Depends(Provide[Container.user_service]),
+):
+    await user_service.delete_user(user_id)

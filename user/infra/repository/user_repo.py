@@ -106,3 +106,18 @@ class UserRepository(IUserRepository):
             for user_model in user_models
         ]
         return (total_count, users)
+
+    async def delete(self, id: str) -> None:
+        existing_user: UserModel | None = await self.session.get(
+            UserModel, id
+        )  # find by id
+        if not existing_user:
+            raise UserNotFoundError(f"user with id={id} not found")
+
+        await self.session.delete(existing_user)
+
+        try:
+            await self.session.commit()
+        except:
+            await self.session.rollback()
+            raise
