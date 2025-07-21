@@ -7,17 +7,15 @@ from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.email import Email
 from user.domain.value_object.name import Name
 from user.domain.value_object.password import Password
+from user.infra.repository.user_repo import UserRepository
 from utils.crypto import Crypto
 
 
 class UserService:
-    def __init__(
-        self,
-        user_repo: IUserRepository,
-        crypto: Crypto,
-    ):
-        self.user_repo = user_repo
-        self.crypto = crypto
+    def __init__(self):
+        self.user_repo: IUserRepository = UserRepository()
+        self.ulid = ULID()
+        self.crypto = Crypto()
 
     async def create_user(
         self,
@@ -36,7 +34,7 @@ class UserService:
         hashed_password = await anyio.to_thread.run_sync(self.crypto.encrypt, password)
 
         user = User(
-            id=ULID().generate(),
+            id=self.ulid.generate(),
             email=Email(email),
             name=Name(name),
             password=hashed_password,
