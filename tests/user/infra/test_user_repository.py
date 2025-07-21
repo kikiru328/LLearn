@@ -3,6 +3,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from db.database import Base
+from user.domain.value_object.role import RoleVO
 from user.infra.repository.user_repo import UserRepository
 from user.domain.entity.user import User as DomainUser
 from user.domain.value_object.email import Email
@@ -38,6 +39,7 @@ async def test_save_and_find(sqlite_session: AsyncSession):
         email=Email("foo@bar.com"),
         name=Name("테스트"),
         password="hashedpwd",
+        role=RoleVO.USER,
         created_at=now,
         updated_at=now,
     )
@@ -61,8 +63,24 @@ async def test_save_and_find(sqlite_session: AsyncSession):
 async def test_duplicate_email_raises(sqlite_session: AsyncSession):
     repo = UserRepository(sqlite_session)
     now = datetime.now(timezone.utc)
-    u1 = DomainUser("01ID1", Email("dup@dup.com"), Name("User1"), "pwd", now, now)
-    u2 = DomainUser("01ID2", Email("dup@dup.com"), Name("User2"), "pwd", now, now)
+    u1 = DomainUser(
+        "01ID1",
+        Email("dup@dup.com"),
+        Name("User1"),
+        "pwd",
+        RoleVO.USER,
+        now,
+        now,
+    )
+    u2 = DomainUser(
+        "01ID2",
+        Email("dup@dup.com"),
+        Name("User2"),
+        "pwd",
+        RoleVO.USER,
+        now,
+        now,
+    )
 
     await repo.save(u1)
     with pytest.raises(Exception):

@@ -6,6 +6,7 @@ from user.domain.repository.user_repo import IUserRepository
 from user.domain.entity.user import User
 from user.domain.value_object.email import Email
 from user.domain.value_object.name import Name
+from user.domain.value_object.role import RoleVO
 
 
 class InMemoryUserRepo(IUserRepository):  # 임시 Stub, Implemenation
@@ -52,6 +53,7 @@ def test_save_and_find():
         email=Email("pecan@gmail.com"),
         name=Name("피칸"),
         password="hashed_dummy",
+        role=RoleVO.USER,
         created_at=fake_now,
         updated_at=fake_now,
     )
@@ -64,10 +66,22 @@ def test_save_duplicate_raises():
     fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
     repo = InMemoryUserRepo()
     u1 = User(
-        ULID().generate(), Email("dup@x.com"), Name("Test"), "pwd", fake_now, fake_now
+        ULID().generate(),
+        Email("dup@x.com"),
+        Name("Test"),
+        "pwd",
+        RoleVO.USER,
+        fake_now,
+        fake_now,
     )
     u2 = User(
-        ULID().generate(), Email("dup@x.com"), Name("Test1"), "pwd", fake_now, fake_now
+        ULID().generate(),
+        Email("dup@x.com"),
+        Name("Test1"),
+        "pwd",
+        RoleVO.USER,
+        fake_now,
+        fake_now,
     )
 
     repo.save(u1)
@@ -79,7 +93,13 @@ def test_update_existing_user():
     fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
     repo = InMemoryUserRepo()
     u = User(
-        ULID().generate(), Email("a@b.com"), Name("Old"), "pwd", fake_now, fake_now
+        ULID().generate(),
+        Email("a@b.com"),
+        Name("Old"),
+        "pwd",
+        RoleVO.USER,
+        fake_now,
+        fake_now,
     )
     repo.save(u)
 
@@ -95,7 +115,13 @@ def test_update_nonexistent_noop():
     fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
     repo = InMemoryUserRepo()
     u = User(
-        ULID().generate(), Email("a@b.com"), Name("XXXX"), "pwd", fake_now, fake_now
+        ULID().generate(),
+        Email("a@b.com"),
+        Name("XXXX"),
+        "pwd",
+        RoleVO.USER,
+        fake_now,
+        fake_now,
     )
 
     # 존재하지 않는 ID 로 update
@@ -114,6 +140,7 @@ def test_get_users_paging():
             Email(f"{i}@x.com"),
             Name(f"U{i}"),
             "pwd",
+            RoleVO.USER,
             fake_now,
             fake_now,
         )
@@ -128,7 +155,13 @@ def test_delete_existing_user():
     fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
     repo = InMemoryUserRepo()
     u = User(
-        ULID().generate(), Email("del@x.com"), Name("DDD"), "pwd", fake_now, fake_now
+        ULID().generate(),
+        Email("del@x.com"),
+        Name("DDD"),
+        "pwd",
+        RoleVO.USER,
+        fake_now,
+        fake_now,
     )
     repo.save(u)
 

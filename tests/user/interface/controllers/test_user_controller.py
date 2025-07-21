@@ -9,6 +9,7 @@ from user.application.exception import DuplicateEmailError
 
 from user.domain.value_object.email import Email
 from user.domain.value_object.name import Name
+from user.domain.value_object.role import RoleVO
 from user.interface.exception_handler import (
     duplicate_email_handler,
     validation_exception_handler,
@@ -51,6 +52,7 @@ async def test_create_user_success(
         id = "01TESTID1234567890"
         name = Name("tester")
         email = Email("test@example.com")
+        role = RoleVO.USER
         created_at = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
     class StubService:
@@ -73,6 +75,7 @@ async def test_create_user_success(
         "name": "tester",
         "email": "test@example.com",
         "created_at": "2025-01-01T00:00:00Z",
+        "role": "USER",
     }
 
 
