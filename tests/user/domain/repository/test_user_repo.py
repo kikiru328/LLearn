@@ -1,3 +1,4 @@
+import pytest
 from datetime import datetime, timezone
 from ulid import ULID
 
@@ -30,8 +31,17 @@ class InMemoryUserRepo(IUserRepository):  # 임시 Stub, Implemenation
         self._by_id[user.id] = user
         self._by_email[user.email] = user
 
-    def get_users(self):
-        return list(self._by_id.values())
+    def get_users(
+        self,
+        page: int = 1,
+        items_per_page: int = 10,
+    ):
+        total_count: int = len(self._by_id)
+
+        return total_count, list(self._by_id.values())
+
+    def delete(self, id: str):
+        del self._by_id[id]
 
 
 def test_save_and_find():
@@ -48,3 +58,85 @@ def test_save_and_find():
     repo.save(mock_user)
     assert repo.find_by_id(mock_user.id) == mock_user
     assert repo.find_by_email(mock_user.email) == mock_user
+
+
+def test_save_duplicate_raises():
+    fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    repo = InMemoryUserRepo()
+    u1 = User(
+        ULID().generate(), Email("dup@x.com"), Name("Test"), "pwd", fake_now, fake_now
+    )
+    u2 = User(
+        ULID().generate(), Email("dup@x.com"), Name("Test1"), "pwd", fake_now, fake_now
+    )
+
+    repo.save(u1)
+    with pytest.raises(ValueError):
+        repo.save(u2)
+
+
+def test_update_existing_user():
+    fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    repo = InMemoryUserRepo()
+    u = User(
+        ULID().generate(), Email("a@b.com"), Name("Old"), "pwd", fake_now, fake_now
+    )
+    repo.save(u)
+
+    # 도메인 객체를 수정
+    u.name = Name("New")
+    repo.update(u)
+
+    found = repo.find_by_id(u.id)
+    assert found.name == Name("New")
+
+
+def test_update_nonexistent_noop():
+    fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    repo = InMemoryUserRepo()
+    u = User(
+        ULID().generate(), Email("a@b.com"), Name("XXXX"), "pwd", fake_now, fake_now
+    )
+
+    # 존재하지 않는 ID 로 update
+    assert repo.update(u) is None
+    # 이후에도 find_by_id는 None
+    assert repo.find_by_id(u.id) is None
+
+
+def test_get_users_paging():
+    fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    repo = InMemoryUserRepo()
+    # 15명 저장
+    for i in range(15):
+        u = User(
+            ULID().generate(),
+            Email(f"{i}@x.com"),
+            Name(f"U{i}"),
+            "pwd",
+            fake_now,
+            fake_now,
+        )
+        repo.save(u)
+
+    total, page1 = repo.get_users(page=1, items_per_page=10)
+    assert total == 15
+    assert len(page1) == 15
+
+
+def test_delete_existing_user():
+    fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    repo = InMemoryUserRepo()
+    u = User(
+        ULID().generate(), Email("del@x.com"), Name("DDD"), "pwd", fake_now, fake_now
+    )
+    repo.save(u)
+
+    repo.delete(u.id)
+    assert repo.find_by_id(u.id) is None
+
+
+def test_delete_nonexistent_raises():
+    repo = InMemoryUserRepo()
+    with pytest.raises(KeyError):
+        repo.delete("nonexistent-id")

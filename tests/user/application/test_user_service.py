@@ -8,6 +8,7 @@ from user.domain.value_object.email import Email
 from user.application.user_service import UserService
 from user.application.exception import DuplicateEmailError, UserNotFoundError
 
+from user.domain.value_object.name import Name
 from utils.crypto import Crypto
 
 
@@ -24,7 +25,7 @@ class InMemoryUserRepo(IUserRepository):
         self._by_email[user.email] = user
 
     async def find_by_id(self, id: str) -> Optional[User]:
-        return self._by_id[id]
+        return self._by_id.get(id)
 
     async def find_by_email(self, email: Email) -> Optional[User]:
         return self._by_email.get(email)
@@ -35,8 +36,22 @@ class InMemoryUserRepo(IUserRepository):
         self._by_id[user.id] = user
         self._by_email[user.email] = user
 
-    async def get_users(self):
-        return list(self._by_id.values())
+    async def get_users(
+        self,
+        page: int = 1,
+        items_per_page: int = 10,
+    ):
+        total_count = len(self._by_id)
+        users = list(self._by_id.values())[
+            (page - 1) * items_per_page : page * items_per_page
+        ]
+        return total_count, users
+
+    async def delete(self, id: str) -> None:
+        user = self._by_id.get(id)
+        if user is None:
+            raise UserNotFoundError(f"{id} not found")
+        del self._by_id[id]
 
 
 pytestmark = pytest.mark.asyncio
@@ -80,3 +95,65 @@ async def test_create_user_duplicate_email():
             name="User2",
             password="Bb2@bbbb",
         )
+
+
+async def test_update_user_success():
+    repo = InMemoryUserRepo()
+    crypto = Crypto()
+    service = UserService(user_repo=repo, crypto=crypto)
+
+    # 먼저 유저 생성
+    now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    u = await service.create_user("u@x.com", "Old", "Aa1!aaaa", created_at=now)
+
+    # 업데이트: 이름 변경
+    updated = await service.update_user(u.id, name="NewName")
+    assert updated.name == Name("NewName")
+    assert updated.updated_at > updated.created_at
+
+
+async def test_update_user_not_found():
+    repo = InMemoryUserRepo()
+    service = UserService(user_repo=repo, crypto=Crypto())
+    with pytest.raises(UserNotFoundError):
+        await service.update_user("nonexistent", name="XYZ")
+
+
+async def test_get_users_paging():
+    repo = InMemoryUserRepo()
+    crypto = Crypto()
+    service = UserService(user_repo=repo, crypto=crypto)
+
+    # 25명 생성
+    for i in range(25):
+        await service.create_user(
+            email=f"{i}@x.com",
+            name=f"UA{i}",
+            password="Aa1!aaaa",
+        )
+
+    total, page1 = await service.get_users(page=1, items_per_page=10)
+    total2, page2 = await service.get_users(page=2, items_per_page=10)
+    total3, page3 = await service.get_users(page=3, items_per_page=10)
+
+    assert total == 25
+    assert len(page1) == 10
+    assert len(page2) == 10
+    assert len(page3) == 5
+
+
+async def test_delete_user_success():
+    repo = InMemoryUserRepo()
+    service = UserService(user_repo=repo, crypto=Crypto())
+
+    u = await service.create_user("del@x.com", "DDDD", "Aa1!aaaa")
+    await service.delete_user(u.id)
+    # 삭제 후 조회 시 None
+    assert await repo.find_by_id(u.id) is None
+
+
+async def test_delete_user_not_found():
+    repo = InMemoryUserRepo()
+    service = UserService(user_repo=repo, crypto=Crypto())
+    with pytest.raises(UserNotFoundError):
+        await service.delete_user("invalid-id")
