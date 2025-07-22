@@ -32,7 +32,7 @@ class InMemoryUserRepo(IUserRepository):  # 임시 Stub, Implemenation
         self._by_id[user.id] = user
         self._by_email[user.email] = user
 
-    def get_users(
+    def find_users(
         self,
         page: int = 1,
         items_per_page: int = 10,
@@ -130,7 +130,7 @@ def test_update_nonexistent_noop():
     assert repo.find_by_id(u.id) is None
 
 
-def test_get_users_paging():
+def test_find_users_paging():
     fake_now = datetime(2025, 1, 1, tzinfo=timezone.utc)
     repo = InMemoryUserRepo()
     # 15명 저장
@@ -146,7 +146,7 @@ def test_get_users_paging():
         )
         repo.save(u)
 
-    total, page1 = repo.get_users(page=1, items_per_page=10)
+    total, page1 = repo.find_users(page=1, items_per_page=10)
     assert total == 15
     assert len(page1) == 15
 

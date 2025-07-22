@@ -83,7 +83,7 @@ class UserRepository(IUserRepository):
             await self.session.rollback()
             raise
 
-    async def get_users(
+    async def find_users(
         self,
         page: int = 1,
         items_per_page: int = 10,

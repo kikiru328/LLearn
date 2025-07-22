@@ -38,7 +38,7 @@ class InMemoryUserRepo(IUserRepository):
         self._by_id[user.id] = user
         self._by_email[user.email] = user
 
-    async def get_users(
+    async def find_users(
         self,
         page: int = 1,
         items_per_page: int = 10,

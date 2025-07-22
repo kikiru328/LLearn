@@ -69,7 +69,7 @@ class UserService:
         return user
 
     async def get_users(self, page: int, items_per_page: int) -> tuple[int, list[User]]:
-        users = await self.user_repo.get_users(page, items_per_page)
+        users = await self.user_repo.find_users(page, items_per_page)
         return users
 
     async def delete_user(self, user_id: str):

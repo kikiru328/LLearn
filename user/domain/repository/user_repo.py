@@ -23,7 +23,9 @@ class IUserRepository(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_users(self, page: int, items_per_page: int) -> tuple[int, list[User]]:
+    async def find_users(
+        self, page: int, items_per_page: int
+    ) -> tuple[int, list[User]]:
         raise NotImplementedError
 
     @abstractmethod

@@ -172,7 +172,7 @@ async def test_delete_and_not_found(sqlite_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_get_users_paging(sqlite_session: AsyncSession):
+async def test_find_users_paging(sqlite_session: AsyncSession):
     repo = UserRepository(sqlite_session)
     now = datetime.now(timezone.utc)
 
@@ -191,19 +191,19 @@ async def test_get_users_paging(sqlite_session: AsyncSession):
     await sqlite_session.commit()
 
     # 2) 페이징 검증
-    total1, page1 = await repo.get_users(page=1, items_per_page=10)
+    total1, page1 = await repo.find_users(page=1, items_per_page=10)
     assert total1 == 25
     assert len(page1) == 10
     assert page1[0].id == "01ID00"
     assert page1[-1].id == "01ID09"
 
-    total2, page2 = await repo.get_users(page=2, items_per_page=10)
+    total2, page2 = await repo.find_users(page=2, items_per_page=10)
     assert total2 == 25
     assert len(page2) == 10
     assert page2[0].id == "01ID10"
     assert page2[-1].id == "01ID19"
 
-    total3, page3 = await repo.get_users(page=3, items_per_page=10)
+    total3, page3 = await repo.find_users(page=3, items_per_page=10)
     assert total3 == 25
     assert len(page3) == 5
     assert page3[0].id == "01ID20"
