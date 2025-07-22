@@ -1,0 +1,2 @@
+class CurriculumNotFoundError(Exception):
+    pass
