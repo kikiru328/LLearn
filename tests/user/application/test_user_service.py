@@ -10,6 +10,7 @@ from user.application.user_service import UserService
 from user.application.exception import UserNotFoundError
 
 from user.domain.value_object.name import Name
+from user.domain.value_object.role import RoleVO
 from utils.crypto import Crypto
 
 
@@ -153,3 +154,30 @@ async def test_delete_user_not_found():
     user_service = UserService(user_repo=repo, crypto=crypto)
     with pytest.raises(UserNotFoundError):
         await user_service.delete_user("invalid-id")
+
+
+async def test_change_role_sucess():
+    repo = InMemoryUserRepo()
+    crypto = Crypto()
+    auth_service = AuthService(user_repo=repo, crypto=crypto)
+    user_service = UserService(user_repo=repo, crypto=crypto)
+
+    now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    user = await auth_service.signup(
+        "u@x.com",
+        "Old",
+        "Aa1!aaaa",
+        created_at=now,
+    )
+
+    updated_role_user = await user_service.change_role(user.id, RoleVO.ADMIN)
+    assert updated_role_user.role == RoleVO.ADMIN
+
+
+async def test_change_role_not_found():
+    repo = InMemoryUserRepo()
+    crypto = Crypto()
+    user_service = UserService(user_repo=repo, crypto=crypto)
+
+    with pytest.raises(UserNotFoundError):
+        await user_service.change_role("invalid-id", RoleVO.ADMIN)
