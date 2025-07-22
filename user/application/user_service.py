@@ -11,6 +11,7 @@ from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.name import Name
 from user.domain.value_object.password import Password
 
+from user.domain.value_object.role import RoleVO
 from utils.crypto import Crypto
 
 
@@ -73,3 +74,13 @@ class UserService:
 
     async def delete_user(self, user_id: str):
         await self.user_repo.delete(user_id)
+
+    async def change_role(self, user_id: str, role: RoleVO):
+        user = await self.user_repo.find_by_id(user_id)
+        if user is None:
+            raise UserNotFoundError(f"{user_id} not found")
+
+        user.role = role
+        user.updated_at = datetime.now(timezone.utc)
+        await self.user_repo.update(user)
+        return user

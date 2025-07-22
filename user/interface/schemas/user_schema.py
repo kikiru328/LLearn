@@ -3,6 +3,7 @@ from typing import List
 from pydantic import BaseModel, EmailStr, Field
 
 from user.domain.entity.user import User
+from user.domain.value_object.role import RoleVO
 
 
 class UpdateUserBody(BaseModel):
@@ -68,3 +69,7 @@ class GetUsersPageResponse(BaseModel):
             items_per_page=items_per_page,
             users=users,
         )
+
+
+class UpdateUserRoleBody(BaseModel):
+    role: RoleVO

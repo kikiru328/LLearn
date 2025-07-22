@@ -6,6 +6,7 @@ from common.auth import CurrentUser, get_current_user, Role
 from user.application.user_service import UserService
 from user.interface.schemas.user_schema import (
     GetUsersPageResponse,
+    UpdateUserRoleBody,
     UserResponse,
 )
 from user.interface.schemas.user_schema import UpdateUserBody, UpdateUserResponse
@@ -138,3 +139,27 @@ async def delete_user_by_admin(
 ):
     assert_admin(current_user)
     await user_service.delete_user(user_id)
+
+
+# admin/ role 수정
+@router.patch(
+    "/{user_id}/role",
+    status_code=200,
+    response_model=UserResponse,
+)
+@inject
+async def change_user_role_by_admin(
+    user_id: str,
+    body: UpdateUserRoleBody,
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    user_service: UserService = Depends(Provide[Container.user_service]),
+):
+
+    # validation admin
+    assert_admin(current_user)
+
+    updated_user = await user_service.change_role(
+        user_id=user_id,
+        role=body.role,
+    )
+    return UserResponse.from_domain(updated_user)

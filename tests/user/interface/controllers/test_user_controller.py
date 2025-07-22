@@ -271,3 +271,69 @@ async def test_delete_user_by_admin_forbidden(di_container, async_client):
     resp = await async_client.delete("/users/01TARGETID")
     assert resp.status_code == 403
     assert resp.json()["detail"] == "관리자만 접근이 가능합니다."
+
+
+@pytest.mark.asyncio
+async def test_change_role_sucess(di_container, async_client):
+
+    # admin 권한
+    admin = CurrentUser(id="01ADMINID", role=Role.ADMIN)
+    async_client._transport.app.dependency_overrides[get_current_user] = lambda: admin
+
+    class StubUser:
+        id = "01TARGETID"
+        name = Name("Bob")
+        email = Email("bob@example.com")
+        role = RoleVO.ADMIN
+        created_at = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        updated_at = datetime(2025, 1, 10, tzinfo=timezone.utc)
+
+    class StubService:
+        async def change_role(self, user_id: str, role=RoleVO):
+            assert user_id == "01TARGETID"
+            assert role == RoleVO.ADMIN
+            return StubUser()
+
+    di_container.user_service.override(providers.Factory(StubService))
+
+    response = await async_client.patch(
+        "/users/01TARGETID/role",
+        json={"role": "ADMIN"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": "01TARGETID",
+        "name": "Bob",
+        "email": "bob@example.com",
+        "role": "ADMIN",
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-01-10T00:00:00Z",
+    }
+
+
+@pytest.mark.asyncio
+async def test_change_role_invalid_value(di_container, async_client):
+    # ADMIN 권한 유지
+    admin = CurrentUser(id="01ADMINID", role=Role.ADMIN)
+    async_client._transport.app.dependency_overrides[get_current_user] = lambda: admin
+
+    # 잘못된 role 값 → Pydantic 검증 실패 → 422
+    resp = await async_client.patch(
+        "/users/01TARGETID/role",
+        json={"role": "SUPERADMIN"},
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_change_role_forbidden(di_container, async_client):
+    # USER 권한 시뮬레이션
+    user = CurrentUser(id="01USERID", role=Role.USER)
+    async_client._transport.app.dependency_overrides[get_current_user] = lambda: user
+
+    resp = await async_client.patch(
+        "/users/01TARGETID/role",
+        json={"role": "ADMIN"},
+    )
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == "관리자만 접근이 가능합니다."
