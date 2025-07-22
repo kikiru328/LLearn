@@ -19,7 +19,7 @@ class Role(StrEnum):
     USER = "USER"
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 @dataclass
