@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from typing import List, cast
-from ulid import ULID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from curriculum.infra.db_models.curriculum import FeedbackModel
@@ -17,14 +16,14 @@ class FeedbackRepository:
 
     async def save(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number_vo,
-        summary_id: ULID,
+        summary_id: str,
         feedback_entity: FeedbackEntity,
     ) -> None:
         feedback_model = FeedbackModel(
-            id=str(feedback_entity.id),
-            summary_id=str(summary_id),
+            id=feedback_entity.id,
+            summary_id=summary_id,
             comment=str(feedback_entity.comment),
             score=feedback_entity.score.value,
             created_at=feedback_entity.created_at,
@@ -34,7 +33,7 @@ class FeedbackRepository:
 
     async def find_by_week(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number_vo,
     ) -> List[FeedbackEntity]:
         # curriculum_id, week_number not used directly, filtering happens via summary_id if needed
@@ -49,7 +48,7 @@ class FeedbackRepository:
 
             feedbacks.append(
                 FeedbackEntity(
-                    id=ULID(feedback_model.id),
+                    id=feedback_model.id,
                     comment=FeedbackComment(feedback_model.comment),
                     score=FeedbackScore(feedback_model.score),
                     created_at=created_at,
@@ -59,7 +58,7 @@ class FeedbackRepository:
 
     async def find_all(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
     ) -> List[FeedbackEntity]:
         query = select(FeedbackModel)
         result = await self._session.execute(query)
@@ -72,7 +71,7 @@ class FeedbackRepository:
 
             all_feedbacks.append(
                 FeedbackEntity(
-                    id=ULID(feedback_model.id),
+                    id=feedback_model.id,
                     comment=FeedbackComment(feedback_model.comment),
                     score=FeedbackScore(feedback_model.score),
                     created_at=created_at_all,
@@ -82,10 +81,10 @@ class FeedbackRepository:
 
     async def delete_by_summary(
         self,
-        summary_id: ULID,
+        summary_id: str,
     ) -> None:
         delete_statement = delete(FeedbackModel).where(
-            FeedbackModel.summary_id == str(summary_id)
+            FeedbackModel.summary_id == summary_id
         )
         await self._session.execute(delete_statement)
         await self._session.commit()

@@ -1,5 +1,4 @@
 from typing import List, Tuple
-from ulid import ULID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
 from curriculum.infra.db_models.curriculum import CurriculumModel, WeekScheduleModel
@@ -18,8 +17,8 @@ class CurriculumRepository:
 
     async def save(self, curriculum: Curriculum) -> None:
         curriculum_model = CurriculumModel(
-            id=str(curriculum.id),
-            user_id=str(curriculum.owner_id),
+            id=curriculum.id,
+            user_id=curriculum.owner_id,
             title=str(curriculum.title),
             created_at=curriculum.created_at,
             updated_at=curriculum.updated_at,
@@ -33,7 +32,7 @@ class CurriculumRepository:
         self.session.add(curriculum_model)
         await self.session.commit()
 
-    async def find_by_id(self, curriculum_id: ULID) -> Curriculum | None:
+    async def find_by_id(self, curriculum_id: str) -> Curriculum | None:
         query_result = await self.session.execute(
             select(CurriculumModel).where(CurriculumModel.id == str(curriculum_id))
         )
@@ -54,8 +53,8 @@ class CurriculumRepository:
         updated_at = cast(datetime, curriculum_model.updated_at)
 
         return Curriculum(
-            id=ULID(curriculum_model.id),
-            owner_id=ULID(curriculum_model.user_id),
+            id=curriculum_model.id,
+            owner_id=curriculum_model.user_id,
             title=Title(curriculum_model.title),
             created_at=created_at,
             updated_at=updated_at,
@@ -87,8 +86,8 @@ class CurriculumRepository:
 
             curriculums.append(
                 Curriculum(
-                    id=ULID(curriculum_model.id),
-                    owner_id=ULID(curriculum_model.user_id),
+                    id=curriculum_model.id,
+                    owner_id=curriculum_model.user_id,
                     title=Title(curriculum_model.title),
                     created_at=created_at,
                     updated_at=updated_at,
@@ -108,8 +107,8 @@ class CurriculumRepository:
         )
         await self.session.commit()
 
-    async def delete(self, curriculum_id: ULID) -> None:
+    async def delete(self, curriculum_id: str) -> None:
         await self.session.execute(
-            delete(CurriculumModel).where(CurriculumModel.id == str(curriculum_id))
+            delete(CurriculumModel).where(CurriculumModel.id == curriculum_id)
         )
         await self.session.commit()

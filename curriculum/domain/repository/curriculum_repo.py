@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import Optional
 
-from ulid import ULID
 
 from curriculum.domain.entity.curriculum import Curriculum
 
@@ -12,7 +11,7 @@ class ICurriculumRepository(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_by_id(self, id: ULID) -> Optional[Curriculum]:
+    async def find_by_id(self, id: str) -> Optional[Curriculum]:
         raise NotImplementedError
 
     @abstractmethod
@@ -26,5 +25,5 @@ class ICurriculumRepository(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, id: ULID):
+    async def delete(self, id: str):
         raise NotImplementedError

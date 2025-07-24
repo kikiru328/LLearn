@@ -1,5 +1,4 @@
-from typing import List
-from ulid import ULID
+from typing import Annotated, List
 from fastapi import APIRouter, Depends, status, Query, Path
 from dependency_injector.wiring import inject, Provide
 from common.auth import get_current_user, CurrentUser
@@ -28,8 +27,8 @@ router = APIRouter(prefix="/curriculums", tags=["curriculums"])
 
 def _to_curriculum_response(domain: CurriculumDomain) -> CurriculumResponse:
     return CurriculumResponse(
-        id=str(domain.id),
-        owner_id=str(domain.owner_id),
+        id=domain.id,
+        owner_id=domain.owner_id,
         topic=str(domain.title),
         duration_weeks=domain.week_schedules.__len__(),  # or stored value
         week_schedules=[
@@ -44,12 +43,14 @@ def _to_curriculum_response(domain: CurriculumDomain) -> CurriculumResponse:
 @router.post("", response_model=CurriculumResponse, status_code=status.HTTP_201_CREATED)
 @inject
 async def create_curriculum(
-    req: CurriculumGenerateRequest,
-    current: CurrentUser = Depends(get_current_user),
-    service: CurriculumService = Depends(Provide[Container.curriculum_service]),
+    request: CurriculumGenerateRequest,
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
 ):
-    domain = await service.generate_and_create_curriculum(
-        owner_id=ULID(current.id), goal=req.topic, weeks=req.duration_weeks
+    domain = await curriculum_service.generate_and_create_curriculum(
+        owner_id=current_user.id, goal=request.topic, weeks=request.duration_weeks
     )
     return _to_curriculum_response(domain)
 
@@ -61,10 +62,12 @@ async def create_curriculum(
 )
 @inject
 async def get_curriculum(
-    curriculum_id: str = Path(..., description="커리큘럼 ID (ULID)"),
-    service: CurriculumService = Depends(Provide[Container.curriculum_service]),
+    curriculum_id: str = Path(..., description="커리큘럼 ID (str)"),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
 ):
-    domain = await service.get_curriculum_by_id(ULID(curriculum_id))
+    domain = await curriculum_service.get_curriculum_by_id(curriculum_id)
     return _to_curriculum_response(domain)
 
 
@@ -75,9 +78,11 @@ async def get_curriculum(
 async def list_curriculums(
     page: int = Query(1, ge=1),
     items_per_page: int = Query(10, ge=1, le=100),
-    service: CurriculumService = Depends(Provide[Container.curriculum_service]),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
 ):
-    total, domains = await service.get_curriculums(page, items_per_page)
+    total, domains = await curriculum_service.get_curriculums(page, items_per_page)
     return PaginatedCurriculumsResponse(
         total_count=total,
         page=page,
@@ -93,11 +98,15 @@ async def list_curriculums(
 )
 @inject
 async def update_curriculum(
-    curriculum_id: str = Path(..., description="커리큘럼 ID (ULID)"),
-    req: CurriculumUpdateRequest = Depends(),
-    service: CurriculumService = Depends(Provide[Container.curriculum_service]),
+    curriculum_id: str = Path(..., description="커리큘럼 ID (str)"),
+    request: CurriculumUpdateRequest = Depends(),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
 ):
-    updated = await service.update_curriculum_title(ULID(curriculum_id), req.topic)
+    updated = await curriculum_service.update_curriculum_title(
+        curriculum_id, request.topic
+    )
     return _to_curriculum_response(updated)
 
 
@@ -107,10 +116,12 @@ async def update_curriculum(
 )
 @inject
 async def delete_curriculum(
-    curriculum_id: str = Path(..., description="커리큘럼 ID (ULID)"),
-    service: CurriculumService = Depends(Provide[Container.curriculum_service]),
+    curriculum_id: str = Path(..., description="커리큘럼 ID (str)"),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
 ):
-    await service.delete_curriculum(ULID(curriculum_id))
+    await curriculum_service.delete_curriculum(curriculum_id)
 
 
 @router.post(
@@ -120,15 +131,17 @@ async def delete_curriculum(
 )
 @inject
 async def submit_summary(
-    curriculum_id: str = Path(..., description="커리큘럼 ID (ULID)"),
+    curriculum_id: str = Path(..., description="커리큘럼 ID (str)"),
     body: SummaryRequest = Depends(),
-    service: CurriculumService = Depends(Provide[Container.curriculum_service]),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
 ):
-    summary = await service.submit_summary(
-        ULID(curriculum_id), body.week_number, SummaryContent(body.content)
+    summary = await curriculum_service.submit_summary(
+        curriculum_id, body.week_number, SummaryContent(body.content)
     )
     return SummaryResponse(
-        id=str(summary.id),
+        id=summary.id,
         content=str(summary.content),
         submitted_at=summary.submitted_at,
     )
@@ -141,16 +154,20 @@ async def submit_summary(
 )
 @inject
 async def get_summaries(
-    curriculum_id: str = Path(..., description="커리큘럼 ID (ULID)"),
+    curriculum_id: str = Path(..., description="커리큘럼 ID (str)"),
     week: int = Query(..., ge=1),
-    service: CurriculumService = Depends(Provide[Container.curriculum_service]),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
 ):
-    summaries = await service.get_summaries_by_week(ULID(curriculum_id), week)
+    summaries = await curriculum_service.get_summaries_by_week(curriculum_id, week)
     return [
         SummaryResponse(
-            id=str(s.id), content=str(s.content), submitted_at=s.submitted_at
+            id=summary.id,
+            content=str(summary.content),
+            submitted_at=summary.submitted_at,
         )
-        for s in summaries
+        for summary in summaries
     ]
 
 
@@ -161,20 +178,22 @@ async def get_summaries(
 )
 @inject
 async def provide_feedback(
-    curriculum_id: str = Path(..., description="커리큘럼 ID (ULID)"),
+    curriculum_id: str = Path(..., description="커리큘럼 ID (str)"),
     week: int = Path(..., ge=1),
     body: FeedbackRequest = Depends(),
-    service: CurriculumService = Depends(Provide[Container.curriculum_service]),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
 ):
-    fb = await service.provide_feedback(
-        ULID(curriculum_id),
+    fb = await curriculum_service.provide_feedback(
+        curriculum_id,
         week,
-        ULID(body.summary_id),
+        body.summary_id,
         FeedbackComment(body.comment),
         FeedbackScore(body.score),
     )
     return FeedbackResponse(
-        id=str(fb.id),
+        id=fb.id,
         comment=str(fb.comment),
         score=fb.score.value,
         created_at=fb.created_at,
@@ -188,19 +207,21 @@ async def provide_feedback(
 )
 @inject
 async def get_feedbacks_by_week(
-    curriculum_id: str = Path(..., description="커리큘럼 ID (ULID)"),
+    curriculum_id: str = Path(..., description="커리큘럼 ID (str)"),
     week: int = Path(..., ge=1),
-    service: CurriculumService = Depends(Provide[Container.curriculum_service]),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
 ):
-    feedbacks = await service.get_feedbacks_by_week(ULID(curriculum_id), week)
+    feedbacks = await curriculum_service.get_feedbacks_by_week(curriculum_id, week)
     return [
         FeedbackResponse(
-            id=str(f.id),
-            comment=str(f.comment),
-            score=f.score.value,
-            created_at=f.created_at,
+            id=feedback.id,
+            comment=str(feedback.comment),
+            score=feedback.score.value,
+            created_at=feedback.created_at,
         )
-        for f in feedbacks
+        for feedback in feedbacks
     ]
 
 
@@ -211,16 +232,16 @@ async def get_feedbacks_by_week(
 )
 @inject
 async def get_all_feedbacks(
-    curriculum_id: str = Path(..., description="커리큘럼 ID (ULID)"),
+    curriculum_id: str = Path(..., description="커리큘럼 ID (str)"),
     service: CurriculumService = Depends(Provide[Container.curriculum_service]),
 ):
-    feedbacks = await service.get_all_feedbacks(ULID(curriculum_id))
+    feedbacks = await service.get_all_feedbacks(curriculum_id)
     return [
         FeedbackResponse(
-            id=str(f.id),
-            comment=str(f.comment),
-            score=f.score.value,
-            created_at=f.created_at,
+            id=feedback.id,
+            comment=str(feedback.comment),
+            score=feedback.score.value,
+            created_at=feedback.created_at,
         )
-        for f in feedbacks
+        for feedback in feedbacks
     ]

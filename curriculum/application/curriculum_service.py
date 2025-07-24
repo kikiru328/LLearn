@@ -29,7 +29,10 @@ class CurriculumService:
         summary_repo: ISummaryRepository,
         feedback_repo: IFeedbackRepository,
         llm_client: ILLMClient,
+        ulid: ULID = ULID(),
     ) -> None:
+
+        self.ulid = ulid
         self.curriculum_repo: ICurriculumRepository = curriculum_repo
         self.summary_repo = summary_repo
         self.feedback_repo = feedback_repo
@@ -41,13 +44,13 @@ class CurriculumService:
 
     async def create_curriculum(
         self,
-        owner_id: ULID,
+        owner_id: str,
         title: str,
         week_schedules: List[WeekSchedule],
         created_at: datetime | None = None,
     ) -> Curriculum:
         created_at = created_at or datetime.now(timezone.utc)
-        id = ULID()  # new_id
+        id = self.ulid.generate()  # new_id
         curriculum = Curriculum(
             id=id,
             owner_id=owner_id,
@@ -62,7 +65,7 @@ class CurriculumService:
 
     async def generate_and_create_curriculum(
         self,
-        owner_id: ULID,
+        owner_id: str,
         goal: str,
         weeks: int,
     ) -> Curriculum:
@@ -83,7 +86,7 @@ class CurriculumService:
 
     async def get_curriculum_by_id(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
     ) -> Curriculum:
         existing_curriculum = await self.curriculum_repo.find_by_id(curriculum_id)
         if existing_curriculum is None:
@@ -100,7 +103,7 @@ class CurriculumService:
 
     async def update_curriculum_title(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         title: str,
     ):
         curriculum = await self.get_curriculum_by_id(curriculum_id)
@@ -112,7 +115,7 @@ class CurriculumService:
 
     async def delete_curriculum(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
     ):
         existing = await self.curriculum_repo.find_by_id(curriculum_id)
         if existing is None:
@@ -126,7 +129,7 @@ class CurriculumService:
 
     async def add_week_schedule(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number: int,
         topics: list[str],
     ):
@@ -148,7 +151,7 @@ class CurriculumService:
 
     async def get_week_schedule(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number: int,
     ) -> WeekSchedule:
         week_vo = WeekNumber(week_number)
@@ -162,14 +165,14 @@ class CurriculumService:
 
     async def get_list_week_schedules(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
     ) -> list[WeekSchedule]:
         curriculum = await self.get_curriculum_by_id(curriculum_id)
         return curriculum.week_schedules
 
     async def update_week_schedule(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number: int,
         topics: list,
     ) -> WeekSchedule:
@@ -188,7 +191,7 @@ class CurriculumService:
 
     async def delete_week_schedule(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number: int,
     ):
         curriculum = await self.get_curriculum_by_id(curriculum_id)
@@ -210,7 +213,7 @@ class CurriculumService:
 
     async def submit_summary(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number: int,
         content: SummaryContent,
         submitted_at: datetime | None = None,
@@ -218,7 +221,9 @@ class CurriculumService:
         curriculum = await self.get_curriculum_by_id(curriculum_id)
         week_vo = WeekNumber(week_number)
         submitted_at = submitted_at or datetime.now(timezone.utc)
-        summary = Summary(id=ULID(), content=content, submitted_at=submitted_at)
+        summary = Summary(
+            id=self.ulid.generate(), content=content, submitted_at=submitted_at
+        )
         await self.summary_repo.save(
             curriculum.id,
             week_vo,
@@ -228,7 +233,7 @@ class CurriculumService:
 
     async def get_summaries_by_week(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number: int,
     ) -> list[Summary]:
         curriculum = await self.get_curriculum_by_id(curriculum_id)
@@ -238,9 +243,9 @@ class CurriculumService:
 
     async def provide_feedback(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number: int,
-        summary_id: ULID,
+        summary_id: str,
         comment: FeedbackComment,
         score: FeedbackScore,
     ) -> Feedback:
@@ -255,7 +260,9 @@ class CurriculumService:
             )
         # 3) 생성 및 저장
         now = datetime.now(timezone.utc)
-        feedback = Feedback(id=ULID(), comment=comment, score=score, created_at=now)
+        feedback = Feedback(
+            id=self.ulid.generate(), comment=comment, score=score, created_at=now
+        )
         await self.feedback_repo.save(
             curriculum_id,
             week_vo,
@@ -264,7 +271,7 @@ class CurriculumService:
         )
         return feedback
 
-    async def delete_summary(self, summary_id: ULID) -> None:
+    async def delete_summary(self, summary_id: str) -> None:
         # 1) cascade delete feedbacks
         await self.feedback_repo.delete_by_summary(summary_id)
         # 2) delete summary itself
@@ -276,7 +283,7 @@ class CurriculumService:
 
     async def get_feedbacks_by_week(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number: int,
     ) -> list[Feedback]:
         # 1) 커리큘럼 검증
@@ -288,7 +295,7 @@ class CurriculumService:
 
     async def get_all_feedbacks(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
     ) -> list[Feedback]:
         # 1) 커리큘럼 검증
         await self.get_curriculum_by_id(curriculum_id)
@@ -297,7 +304,7 @@ class CurriculumService:
 
     async def delete_feedbacks_by_summary(
         self,
-        summary_id: ULID,
+        summary_id: str,
     ) -> None:
         # summary 존재 여부는 summary_repo로 검증해도 되고, 단순히 삭제만 해도 무방
         await self.feedback_repo.delete_by_summary(summary_id)

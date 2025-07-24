@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import List, cast
-from ulid import ULID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from curriculum.infra.db_models.curriculum import SummaryModel
@@ -14,13 +13,13 @@ class SummaryRepository:
 
     async def save(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number_vo,
         summary_entity: SummaryEntity,
     ) -> None:
         summary_model = SummaryModel(
-            id=str(summary_entity.id),
-            curriculum_id=str(curriculum_id),
+            id=summary_entity.id,
+            curriculum_id=curriculum_id,
             week_schedule_id=week_number_vo.value,
             content=str(summary_entity.content),
             submitted_at=summary_entity.submitted_at,
@@ -30,11 +29,11 @@ class SummaryRepository:
 
     async def find_by_week(
         self,
-        curriculum_id: ULID,
+        curriculum_id: str,
         week_number_vo,
     ) -> List[SummaryEntity]:
         query = select(SummaryModel).where(
-            SummaryModel.curriculum_id == str(curriculum_id),
+            SummaryModel.curriculum_id == curriculum_id,
             SummaryModel.week_schedule_id == week_number_vo.value,
         )
         result = await self._session.execute(query)
@@ -45,16 +44,14 @@ class SummaryRepository:
             submitted_at_dt: datetime = cast(datetime, summary_model.submitted_at)
             summaries.append(
                 SummaryEntity(
-                    id=ULID(summary_model.id),
+                    id=summary_model.id,
                     content=SummaryContent(summary_model.content),
                     submitted_at=submitted_at_dt,
                 )
             )
         return summaries
 
-    async def delete(self, summary_id: ULID) -> None:
-        delete_statement = delete(SummaryModel).where(
-            SummaryModel.id == str(summary_id)
-        )
+    async def delete(self, summary_id: str) -> None:
+        delete_statement = delete(SummaryModel).where(SummaryModel.id == summary_id)
         await self._session.execute(delete_statement)
         await self._session.commit()
