@@ -1,3 +1,4 @@
+from ulid import ULID
 from dataclasses import dataclass
 from datetime import datetime
 from curriculum.domain.value_object.summary_content import SummaryContent
@@ -5,6 +6,7 @@ from curriculum.domain.value_object.summary_content import SummaryContent
 
 @dataclass
 class Summary:
+    id: ULID
     content: SummaryContent
     submitted_at: datetime
 
