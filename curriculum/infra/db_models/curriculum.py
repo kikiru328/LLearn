@@ -15,7 +15,7 @@ class CurriculumModel(Base):
     updated_at: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
 
     # 관계 설정
-    owner = relationship("UserModel", back_populates="curriculums")
+    owner = relationship("User", back_populates="curriculums")
     week_schedules = relationship(
         "WeekScheduleModel",
         back_populates="curriculum",

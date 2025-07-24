@@ -20,6 +20,7 @@ class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(
         packages=[
             "user.interface.controllers",
+            "curriculum.interface.controllers",
         ]
     )
 
@@ -61,7 +62,9 @@ class Container(containers.DeclarativeContainer):
 
     # LLMClient 인터페이스 ↔ 구현체 매핑
     llm_client = providers.Singleton(
-        RealLLMClient, api_key=config.provided.llm_api_key  # implement
+        RealLLMClient,
+        api_key=config.provided.llm_api_key,
+        endpoint=config.provided.llm_endpoint,  # implement
     )
 
     curriculum_service = providers.Factory(

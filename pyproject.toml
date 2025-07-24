@@ -25,7 +25,8 @@ dependencies = [
     "pydantic[email] (>=2.11.7,<3.0.0)",
     "python-jose[cryptography] (>=3.5.0,<4.0.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
-    "aiohttp (>=3.12.14,<4.0.0)"
+    "aiohttp (>=3.12.14,<4.0.0)",
+    "py-ulid (>=1.0.3,<2.0.0)",
 ]
 
 

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     secret_key: str = ""
     algorithm: str = ""
     llm_api_key: str = ""
+    llm_endpoint: str = ""
 
 
 @lru_cache
