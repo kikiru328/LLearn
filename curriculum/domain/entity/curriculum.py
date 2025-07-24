@@ -9,6 +9,7 @@ from curriculum.domain.value_object.title import Title
 @dataclass
 class Curriculum:
     id: ULID
+    owner_id: ULID
     title: Title
     created_at: datetime
     updated_at: datetime
@@ -17,6 +18,12 @@ class Curriculum:
     def __post_init__(self):
         if not isinstance(self.id, ULID):
             raise TypeError(f"id must be a ULID instance, got {type(self.id).__name__}")
+
+        if not isinstance(self.owner_id, ULID):
+            raise TypeError(
+                f"owner_id must be a ULID instance, got {type(self.owner_id).__name__}"
+            )
+
         if not isinstance(self.title, Title):
             raise TypeError(
                 f"title must be a Title instance, got {type(self.title).__name__}"

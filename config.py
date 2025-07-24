@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     sqlalchemy_database_url: str = ""
     secret_key: str = ""
     algorithm: str = ""
+    llm_api_key: str = ""
 
 
 @lru_cache

@@ -12,6 +12,7 @@ from curriculum.domain.entity.summary import Summary
 from curriculum.domain.entity.week_schedule import WeekSchedule
 from curriculum.domain.repository.curriculum_repo import ICurriculumRepository
 from curriculum.domain.repository.feedback_repo import IFeedbackRepository
+from curriculum.domain.repository.llm_client_repo import ILLMClient
 from curriculum.domain.repository.summary_repo import ISummaryRepository
 from curriculum.domain.value_object.feedback_comment import FeedbackComment
 from curriculum.domain.value_object.feedback_score import FeedbackScore
@@ -27,10 +28,12 @@ class CurriculumService:
         curriculum_repo: ICurriculumRepository,
         summary_repo: ISummaryRepository,
         feedback_repo: IFeedbackRepository,
+        llm_client: ILLMClient,
     ) -> None:
         self.curriculum_repo: ICurriculumRepository = curriculum_repo
         self.summary_repo = summary_repo
         self.feedback_repo = feedback_repo
+        self.llm_client = llm_client
 
     # --------------------------
     # Curriculum Service: aggregate root
@@ -38,6 +41,7 @@ class CurriculumService:
 
     async def create_curriculum(
         self,
+        owner_id: ULID,
         title: str,
         week_schedules: List[WeekSchedule],
         created_at: datetime | None = None,
@@ -46,6 +50,7 @@ class CurriculumService:
         id = ULID()  # new_id
         curriculum = Curriculum(
             id=id,
+            owner_id=owner_id,
             title=Title(title),
             created_at=created_at,
             updated_at=created_at,
@@ -54,6 +59,27 @@ class CurriculumService:
 
         await self.curriculum_repo.save(curriculum)
         return curriculum
+
+    async def generate_and_create_curriculum(
+        self,
+        owner_id: ULID,
+        goal: str,
+        weeks: int,
+    ) -> Curriculum:
+
+        raw = await self.llm_client.generate_schedule(goal, weeks)
+        week_schedules: list[WeekSchedule] = []
+        for item in raw:
+            # MyPy가 object로 보는 값을 명시적 변환
+            week_num = int(item["week_number"])
+            topics_list = list(item["topics"])  # runtime엔 list[str]이어야 함
+            week_schedules.append(
+                WeekSchedule(
+                    week_number=WeekNumber(week_num),
+                    topics=Topics(topics_list),
+                )
+            )
+        return await self.create_curriculum(owner_id, goal, week_schedules)
 
     async def get_curriculum_by_id(
         self,
