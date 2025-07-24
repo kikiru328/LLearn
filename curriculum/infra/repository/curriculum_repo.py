@@ -9,6 +9,7 @@ from curriculum.domain.value_object.week_number import WeekNumber
 from curriculum.domain.value_object.topics import Topics
 from typing import cast
 from datetime import datetime
+from sqlalchemy.orm import joinedload
 
 
 class CurriculumRepository:
@@ -34,9 +35,13 @@ class CurriculumRepository:
 
     async def find_by_id(self, curriculum_id: str) -> Curriculum | None:
         query_result = await self.session.execute(
-            select(CurriculumModel).where(CurriculumModel.id == str(curriculum_id))
+            select(CurriculumModel)
+            .options(joinedload(CurriculumModel.week_schedules))
+            .where(CurriculumModel.id == str(curriculum_id))
         )
-        curriculum_model = query_result.scalar_one_or_none()
+        # curriculum_model = query_result.scalar_one_or_none()
+        curriculum_model = query_result.unique().scalar_one_or_none()
+
         if curriculum_model is None:
             return None
 
@@ -64,8 +69,11 @@ class CurriculumRepository:
     async def find_curriculums(
         self, page: int, items_per_page: int
     ) -> Tuple[int, List[Curriculum]]:
-        query_result = await self.session.execute(select(CurriculumModel))
-        all_models = query_result.scalars().all()
+        query_result = await self.session.execute(
+            select(CurriculumModel).options(joinedload(CurriculumModel.week_schedules))
+        )
+        all_models = query_result.unique().scalars().all()
+
         total_count = len(all_models)
         paginated_models = all_models[
             (page - 1) * items_per_page : page * items_per_page
