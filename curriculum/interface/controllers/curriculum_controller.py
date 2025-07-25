@@ -124,6 +124,35 @@ async def delete_curriculum(
     await curriculum_service.delete_curriculum(curriculum_id)
 
 
+@router.delete(
+    "/{curriculum_id}/weeks/{week}",
+    status_code=status.HTTP_200_OK,
+)
+@inject
+async def delete_week_schedule(
+    curriculum_id: str = Path(..., description="커리큘럼 ID"),
+    week: int = Path(..., ge=1, description="주차 번호"),
+    force: bool = Query(False, description="강제 삭제 여부"),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
+):
+    if not force:
+        summaries = await curriculum_service.get_summaries_by_week(curriculum_id, week)
+        feedbacks = await curriculum_service.get_feedbacks_by_week(curriculum_id, week)
+
+        if summaries or feedbacks:
+            return {
+                "warning": f"주차 {week}에 요약 {len(summaries)}개, 피드백 {len(feedbacks)}개가 함께 삭제됩니다.",
+                "require_force": True,
+                "summary_count": len(summaries),
+                "feedback_count": len(feedbacks),
+            }
+
+    await curriculum_service.delete_week_schedule(curriculum_id, week)
+    return {"message": f"주차 {week} 삭제 완료"}
+
+
 @router.post(
     "/{curriculum_id}/summaries",
     response_model=SummaryResponse,
@@ -171,13 +200,49 @@ async def get_summaries(
     ]
 
 
+@router.delete(
+    "/{curriculum_id}/summaries/{summary_id}",
+    status_code=status.HTTP_200_OK,
+)
+@inject
+async def delete_summary(
+    curriculum_id: str = Path(..., description="커리큘럼 ID"),
+    summary_id: str = Path(..., description="요약 ID"),
+    force: bool = Query(False, description="강제 삭제 여부"),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
+):
+    if not force:
+        try:
+            all_feedbacks = await curriculum_service.get_all_feedbacks(curriculum_id)
+            related_feedbacks = [
+                f
+                for f in all_feedbacks
+                if hasattr(f, "summary_id") and f.summary_id == summary_id
+            ]
+
+            if related_feedbacks:
+                return {
+                    "warning": f"요약에 연결된 피드백 {len(related_feedbacks)}개가 함께 삭제됩니다.",
+                    "require_force": True,
+                    "feedback_count": len(related_feedbacks),
+                }
+        except Exception:
+            pass
+
+    # 2) 삭제 실행 (피드백도 함께 삭제됨)
+    await curriculum_service.delete_summary(summary_id)
+    return {"message": f"요약 {summary_id} 삭제 완료"}
+
+
 @router.post(
-    "/{curriculum_id}/weeks/{week}/feedbacks",
+    "/{curriculum_id}/weeks/{week}/feedbacks-manuel",
     response_model=FeedbackResponse,
     status_code=status.HTTP_201_CREATED,
 )
 @inject
-async def provide_feedback(
+async def provide_feedback_by_manuel(
     curriculum_id: str = Path(..., description="커리큘럼 ID (str)"),
     week: int = Path(..., ge=1),
     body: FeedbackRequest = Depends(),
@@ -200,6 +265,39 @@ async def provide_feedback(
     )
 
 
+@router.post(
+    "/{curriculum_id}/week/{week}/feedback-generate",
+    status_code=status.HTTP_201_CREATED,
+)
+@inject
+async def submit_summary_with_auto_feedback(
+    curriculum_id: str = Path(..., description="커리큘럼 ID"),
+    week_number: int = Query(..., ge=1, description="주차 번호"),
+    content: str = Query(..., min_length=300, description="요약 내용"),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
+):
+    summary_content = SummaryContent(content)
+    summary, feedback = await curriculum_service.submit_summary_with_auto_feedback(
+        curriculum_id, week_number, summary_content
+    )
+
+    return {
+        "summary": {
+            "id": summary.id,
+            "content": summary.content.value,
+            "submitted_at": summary.submitted_at,
+        },
+        "feedback": {
+            "id": feedback.id,
+            "comment": feedback.comment.value,
+            "score": feedback.score.value,
+            "created_at": feedback.created_at,
+        },
+    }
+
+
 @router.get(
     "/{curriculum_id}/weeks/{week}/feedbacks",
     response_model=List[FeedbackResponse],
@@ -217,7 +315,7 @@ async def get_feedbacks_by_week(
     return [
         FeedbackResponse(
             id=feedback.id,
-            comment=str(feedback.comment),
+            comment=feedback.comment.value,
             score=feedback.score.value,
             created_at=feedback.created_at,
         )
@@ -239,7 +337,7 @@ async def get_all_feedbacks(
     return [
         FeedbackResponse(
             id=feedback.id,
-            comment=str(feedback.comment),
+            comment=feedback.comment.value,
             score=feedback.score.value,
             created_at=feedback.created_at,
         )

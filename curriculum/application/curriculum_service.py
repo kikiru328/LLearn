@@ -21,6 +21,10 @@ from curriculum.domain.value_object.title import Title
 from curriculum.domain.value_object.topics import Topics
 from curriculum.domain.value_object.week_number import WeekNumber
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class CurriculumService:
     def __init__(
@@ -194,6 +198,10 @@ class CurriculumService:
         curriculum_id: str,
         week_number: int,
     ):
+        summaries = await self.get_summaries_by_week(curriculum_id, week_number)
+        for summary in summaries:
+            await self.delete_summary(summary.id)
+
         curriculum = await self.get_curriculum_by_id(curriculum_id)
         week_vo = WeekNumber(week_number)
 
@@ -240,6 +248,50 @@ class CurriculumService:
         # VO 변환
         week_vo = WeekNumber(week_number)
         return await self.summary_repo.find_by_week(curriculum.id, week_vo)
+
+    async def submit_summary_with_auto_feedback(
+        self,
+        curriculum_id: str,
+        week_number: int,
+        content: SummaryContent,
+        submitted_at: datetime | None = None,
+    ) -> tuple[Summary, Feedback]:
+        # 1) Summary 제출
+        summary = await self.submit_summary(
+            curriculum_id, week_number, content, submitted_at
+        )
+
+        try:
+            # 2) 해당 주차 학습 주제 조회
+            week_schedule = await self.get_week_schedule(curriculum_id, week_number)
+
+            # 3) LLM으로 피드백 생성
+            feedback_data = await self.llm_client.generate_feedback(
+                topics=week_schedule.topics.items, summary_content=content.value
+            )
+
+            comment = feedback_data.get("comment", "")
+            score: object = feedback_data.get("score", 0)
+
+            if not isinstance(comment, str) or not isinstance(score, int):
+                raise ValueError("Invalid feedback data format from LLM")
+
+            # 4) 피드백 저장
+            feedback = await self.provide_feedback(
+                curriculum_id=curriculum_id,
+                week_number=week_number,
+                summary_id=summary.id,
+                comment=FeedbackComment(comment),
+                score=FeedbackScore(score),
+            )
+
+            return summary, feedback
+
+        except Exception as e:
+            # LLM 실패 시 summary는 유지, 에러 로깅
+            logger.error(f"Failed to generate auto feedback: {e}")
+            # summary만 반환하거나 기본 피드백 생성
+            raise e
 
     async def provide_feedback(
         self,
