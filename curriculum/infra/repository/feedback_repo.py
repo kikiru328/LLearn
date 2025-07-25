@@ -24,7 +24,7 @@ class FeedbackRepository:
         feedback_model = FeedbackModel(
             id=feedback_entity.id,
             summary_id=summary_id,
-            comment=str(feedback_entity.comment),
+            comment=feedback_entity.comment.value,
             score=feedback_entity.score.value,
             created_at=feedback_entity.created_at,
         )

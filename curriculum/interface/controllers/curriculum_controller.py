@@ -164,7 +164,7 @@ async def get_summaries(
     return [
         SummaryResponse(
             id=summary.id,
-            content=str(summary.content),
+            content=summary.content.value,
             submitted_at=summary.submitted_at,
         )
         for summary in summaries

@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import List, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
-from curriculum.infra.db_models.curriculum import SummaryModel
+from curriculum.domain.value_object.week_number import WeekNumber
+from curriculum.infra.db_models.curriculum import SummaryModel, WeekScheduleModel
 from curriculum.domain.entity.summary import Summary as SummaryEntity
 from curriculum.domain.value_object.summary_content import SummaryContent
 
@@ -12,32 +13,44 @@ class SummaryRepository:
         self._session = session
 
     async def save(
-        self,
-        curriculum_id: str,
-        week_number_vo,
-        summary_entity: SummaryEntity,
+        self, curriculum_id: str, week_vo: WeekNumber, summary: SummaryEntity
     ) -> None:
+
+        week_schedule_query = await self._session.execute(
+            select(WeekScheduleModel.id).where(
+                WeekScheduleModel.curriculum_id == curriculum_id,
+                WeekScheduleModel.week_number == week_vo.value,
+            )
+        )
+        week_schedule_id = week_schedule_query.scalar_one()
+
         summary_model = SummaryModel(
-            id=summary_entity.id,
+            id=summary.id,
             curriculum_id=curriculum_id,
-            week_schedule_id=week_number_vo.value,
-            content=str(summary_entity.content),
-            submitted_at=summary_entity.submitted_at,
+            week_schedule_id=week_schedule_id,
+            content=summary.content.value,
+            submitted_at=summary.submitted_at,
         )
         self._session.add(summary_model)
         await self._session.commit()
 
     async def find_by_week(
-        self,
-        curriculum_id: str,
-        week_number_vo,
+        self, curriculum_id: str, week_vo: WeekNumber
     ) -> List[SummaryEntity]:
-        query = select(SummaryModel).where(
-            SummaryModel.curriculum_id == curriculum_id,
-            SummaryModel.week_schedule_id == week_number_vo.value,
+        week_schedule_query = await self._session.execute(
+            select(WeekScheduleModel.id).where(
+                WeekScheduleModel.curriculum_id == curriculum_id,
+                WeekScheduleModel.week_number == week_vo.value,
+            )
         )
-        result = await self._session.execute(query)
-        summary_models = result.scalars().all()
+        week_schedule_id = week_schedule_query.scalar_one()
+
+        query_result = await self._session.execute(
+            select(SummaryModel).where(
+                SummaryModel.week_schedule_id == week_schedule_id
+            )
+        )
+        summary_models = query_result.scalars().all()
 
         summaries: List[SummaryEntity] = []
         for summary_model in summary_models:
