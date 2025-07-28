@@ -19,7 +19,7 @@ async def signup(
     created_user: User = await auth_service.signup(
         name=body.name,
         email=body.email,
-        password=body.password,
+        password=body.password,  # process in auth_service
     )
     return SignUpResponse.from_domain(created_user)
 

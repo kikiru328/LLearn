@@ -35,7 +35,7 @@ async def get_me(
 # mypage: 수정
 @router.put("/me", response_model=UpdateUserResponse)
 @inject
-async def updated_me(
+async def update_me(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     user: UpdateUserBody,
     user_service: UserService = Depends(Provide[Container.user_service]),
@@ -49,7 +49,7 @@ async def updated_me(
 
 
 # mypage: 삭제
-@router.delete("/me", status_code=204)
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 @inject
 async def delete_me(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -63,8 +63,8 @@ async def delete_me(
 # ────────────────────────────────────────────────────────────
 
 
-def assert_admin(current_user: CurrentUser):
-    if current_user.role is not Role.ADMIN:
+def assert_admin(current_user: CurrentUser) -> None:
+    if current_user.role != Role.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="관리자만 접근이 가능합니다."
         )
@@ -73,7 +73,7 @@ def assert_admin(current_user: CurrentUser):
 # admin/ 전체 조회
 @router.get("", status_code=200, response_model=GetUsersPageResponse)
 @inject
-async def get_list_users(
+async def get_users(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     page: int = 1,
     items_per_page: int = 18,
@@ -94,7 +94,7 @@ async def get_list_users(
 
 
 # admin/ 유저 조회
-@router.get("/{user_id}", status_code=201, response_model=UserResponse)
+@router.get("/{user_id}", status_code=200, response_model=UserResponse)
 @inject
 async def get_user(
     user_id: str,
@@ -110,7 +110,7 @@ async def get_user(
 
 
 # admin/ 수정
-@router.put("/{user_id}", status_code=201, response_model=UpdateUserResponse)
+@router.put("/{user_id}", status_code=200, response_model=UpdateUserResponse)
 @inject
 async def update_user_by_admin(
     user_id: str,
@@ -142,11 +142,7 @@ async def delete_user_by_admin(
 
 
 # admin/ role 수정
-@router.patch(
-    "/{user_id}/role",
-    status_code=200,
-    response_model=UserResponse,
-)
+@router.patch("/{user_id}/role", status_code=200, response_model=UserResponse)
 @inject
 async def change_user_role_by_admin(
     user_id: str,

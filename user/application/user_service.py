@@ -1,6 +1,4 @@
 import anyio
-
-from fastapi.exceptions import RequestValidationError
 from ulid import ULID
 from datetime import datetime, timezone
 
@@ -31,6 +29,7 @@ class UserService:
         self,
         user_id: str,
     ):
+
         user = await self.user_repo.find_by_id(user_id)
         if user is None:
             raise UserNotFoundError(f"user with id={user_id} not found")
@@ -42,6 +41,7 @@ class UserService:
         name: str | None = None,
         password: str | None = None,
     ) -> User:
+
         user = await self.user_repo.find_by_id(id=user_id)
 
         if user is None:
@@ -54,15 +54,17 @@ class UserService:
             user.updated_at = updated_at
 
         if password:
-            # validation
-            if len(password) < 8:
-                raise RequestValidationError("password must be at least 8 characters")
 
+            # validation
             Password(password)
+
+            # hash
             new_hashed_password = await anyio.to_thread.run_sync(
                 self.crypto.encrypt, password
             )
-            user.password = new_hashed_password
+
+            # VO
+            user.password = Password(new_hashed_password)
             user.updated_at = updated_at
 
         await self.user_repo.update(user)
@@ -72,10 +74,10 @@ class UserService:
         users = await self.user_repo.find_users(page, items_per_page)
         return users
 
-    async def delete_user(self, user_id: str):
+    async def delete_user(self, user_id: str) -> None:
         await self.user_repo.delete(user_id)
 
-    async def change_role(self, user_id: str, role: RoleVO):
+    async def change_role(self, user_id: str, role: RoleVO) -> User:
         user = await self.user_repo.find_by_id(user_id)
         if user is None:
             raise UserNotFoundError(f"{user_id} not found")
