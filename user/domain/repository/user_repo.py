@@ -29,5 +29,5 @@ class IUserRepository(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, id: str):
+    async def delete(self, id: str) -> None:
         raise NotImplementedError
