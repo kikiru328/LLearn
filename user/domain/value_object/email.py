@@ -1,5 +1,4 @@
 from typing import Any
-from email_validator import validate_email, EmailNotValidError
 
 
 class Email:
@@ -9,7 +8,7 @@ class Email:
         if not isinstance(raw, str):
             raise ValueError("Email must be a string")
 
-        self._value: str = raw.lower().strip()
+        self._value: str = raw.lower().strip()  # 정규화
 
     def __str__(self) -> str:
         return self._value

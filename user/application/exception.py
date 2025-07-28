@@ -1,4 +1,4 @@
-class DuplicateEmailError(Exception):
+class ExistEmailError(Exception):
     pass
 
 

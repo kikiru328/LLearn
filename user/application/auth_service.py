@@ -3,7 +3,7 @@ import anyio
 from fastapi import HTTPException, status
 from ulid import ULID
 from common.auth import Role, create_access_token
-from user.application.exception import DuplicateEmailError, ExistNameError
+from user.application.exception import ExistEmailError, ExistNameError
 from user.domain.entity.user import User
 from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.email import Email
@@ -38,7 +38,7 @@ class AuthService:
 
         # validation email exist
         if await self.user_repo.find_by_email(Email(email)):
-            raise DuplicateEmailError
+            raise ExistEmailError
 
         # validation name exist
         if await self.user_repo.find_by_name(Name(name)):
