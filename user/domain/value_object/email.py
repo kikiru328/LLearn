@@ -9,12 +9,7 @@ class Email:
         if not isinstance(raw, str):
             raise ValueError("Email must be a string")
 
-        try:
-            # validate_email은 유효성 검사 + 정규화된 이메일 반환
-            valid = validate_email(raw, check_deliverability=False)
-            self._value = valid.email.lower()
-        except EmailNotValidError as e:
-            raise ValueError(f"Invalid email format: {str(e)}")
+        self._value: str = raw.lower().strip()
 
     def __str__(self) -> str:
         return self._value

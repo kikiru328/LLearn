@@ -54,7 +54,7 @@ class AuthService:
             email=Email(email),
             name=Name(name),
             password=Password(hashed),
-            role=RoleVO.USER,
+            role=RoleVO.USER,  # default
             created_at=created_at,
             updated_at=created_at,
         )
