@@ -7,7 +7,7 @@ from curriculum.domain.entity.curriculum import Curriculum
 
 class ICurriculumRepository(metaclass=ABCMeta):
     @abstractmethod
-    async def save(self, curriculum: Curriculum):
+    async def save(self, curriculum: Curriculum) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -21,9 +21,9 @@ class ICurriculumRepository(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def update(self, curriculum: Curriculum):
+    async def update(self, curriculum: Curriculum) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, id: str):
+    async def delete(self, id: str) -> None:
         raise NotImplementedError

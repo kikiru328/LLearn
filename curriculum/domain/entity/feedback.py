@@ -26,9 +26,3 @@ class Feedback:
             )
         if not isinstance(self.id, str):
             raise TypeError(f"id must be a str instance, got {type(self.id).__name__}")
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, Feedback) and self.id == other.id
-
-    def __hash__(self) -> int:
-        return hash(self.id)

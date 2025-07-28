@@ -10,6 +10,10 @@ class Summary:
     submitted_at: datetime
 
     def __post_init__(self):  # 입력받는 시점에 확인
+
+        if not isinstance(self.id, str):
+            raise TypeError(f"id must be a str instance, got {type(self.id).__name__}")
+
         if not isinstance(self.content, SummaryContent):
             raise TypeError(
                 f"content must be a SummaryContent instance, got {type(self.content).__name__}"
