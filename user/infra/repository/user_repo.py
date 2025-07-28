@@ -5,6 +5,7 @@ from user.application.exception import UserNotFoundError
 from user.domain.entity.user import User as UserDomain
 from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.name import Name
+from user.domain.value_object.password import Password
 from user.domain.value_object.role import RoleVO
 from user.infra.db_models.user import User as UserModel
 
@@ -21,7 +22,7 @@ class UserRepository(IUserRepository):
             id=user.id,
             email=str(user.email),
             name=str(user.name),
-            password=user.password,
+            password=user.password.value,
             role=user.role,
             created_at=user.created_at,
             updated_at=user.updated_at,
@@ -37,11 +38,12 @@ class UserRepository(IUserRepository):
         user = await self.session.get(UserModel, id)
         if not user:
             raise UserNotFoundError(f"user with id = {id} not found")  # 없으면 none
+
         return UserDomain(
             id=user.id,
             email=Email(user.email),
             name=Name(user.name),
-            password=user.password,
+            password=Password(user.password),
             role=RoleVO(user.role),
             created_at=user.created_at,
             updated_at=user.updated_at,
@@ -58,7 +60,7 @@ class UserRepository(IUserRepository):
             id=user.id,
             email=Email(user.email),
             name=Name(user.name),
-            password=user.password,
+            password=Password(user.password),
             role=RoleVO(user.role),
             created_at=user.created_at,
             updated_at=user.updated_at,
@@ -72,7 +74,7 @@ class UserRepository(IUserRepository):
             raise UserNotFoundError(f"user with id={user.id} not found")
 
         existing_user.name = str(user.name)
-        existing_user.password = user.password
+        existing_user.password = user.password.value
         existing_user.role = user.role
         existing_user.updated_at = user.updated_at
 
@@ -105,7 +107,7 @@ class UserRepository(IUserRepository):
                 id=user_model.id,
                 email=Email(user_model.email),
                 name=Name(user_model.name),
-                password=user_model.password,
+                password=Password(user_model.password),
                 role=RoleVO(user_model.role),
                 created_at=user_model.created_at,
                 updated_at=user_model.updated_at,

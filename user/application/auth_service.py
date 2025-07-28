@@ -9,6 +9,7 @@ from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.email import Email
 from user.domain.value_object.name import Name
 from user.domain.value_object.password import Password
+from user.domain.value_object.password_validator import PasswordValidator
 from user.domain.value_object.role import RoleVO
 from utils.crypto import Crypto
 
@@ -32,6 +33,7 @@ class AuthService:
         password: str,
         created_at: datetime | None = None,
     ):
+
         created_at = created_at or datetime.now(timezone.utc)
 
         # validation email exist
@@ -39,15 +41,15 @@ class AuthService:
             raise DuplicateEmailError
 
         # validation
-        Password(password)
+        PasswordValidator.validate(password)
 
-        hashed_password = await anyio.to_thread.run_sync(self.crypto.encrypt, password)
+        hashed = await anyio.to_thread.run_sync(self.crypto.encrypt, password)
 
         user = User(
             id=self.ulid.generate(),
             email=Email(email),
             name=Name(name),
-            password=hashed_password,
+            password=Password(hashed),
             role=RoleVO.USER,
             created_at=created_at,
             updated_at=created_at,
@@ -61,14 +63,16 @@ class AuthService:
         email: str,
         password: str,
     ):
+
         user = await self.user_repo.find_by_email(Email(email))
+
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
             )
 
-        if not self.crypto.verify(password, user.password):
+        if not self.crypto.verify(password, user.password.value):  # extract hashed
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
