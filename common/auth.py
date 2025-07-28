@@ -49,7 +49,7 @@ def create_access_token(
     role: Role,
     expires_delta: timedelta | None = None,
 ) -> str:
-    expire_dt = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=1))
+    expire_dt = datetime.now(timezone.utc) + (expires_delta or timedelta(hours=5))
     to_encode = {
         "sub": subject,
         "role": role.value,

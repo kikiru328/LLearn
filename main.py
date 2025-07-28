@@ -1,10 +1,13 @@
 from typing import Any
 from fastapi import FastAPI
 from DI.containers import Container
+from user.interface.password_exception_handler import (
+    register_password_exception_handlers,
+)
+from user.interface.exception_handler import register_user_exception_handlers
 from curriculum.interface.exception_handler import (
     register_curriculum_exception_handlers,
 )
-from user.interface.exception_handler import register_user_exception_handlers
 
 from user.interface.controllers.auth_controller import router as auth_routers
 from user.interface.controllers.user_controller import router as user_routers
@@ -19,6 +22,7 @@ app: Any = FastAPI()
 
 app.container = container
 
+register_password_exception_handlers(app)
 register_user_exception_handlers(app)
 register_curriculum_exception_handlers(app)
 

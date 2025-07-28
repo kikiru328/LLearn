@@ -39,7 +39,7 @@ async def update_me(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     user: UpdateUserBody,
     user_service: UserService = Depends(Provide[Container.user_service]),
-):
+) -> UpdateUserResponse:
     updated_user = await user_service.update_user(
         user_id=current_user.id,
         name=user.name,
@@ -59,28 +59,18 @@ async def delete_me(
 
 
 # ────────────────────────────────────────────────────────────
-# 관리자용: /users and /users/{user_id}
+# Total
 # ────────────────────────────────────────────────────────────
-
-
-def assert_admin(current_user: CurrentUser) -> None:
-    if current_user.role != Role.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="관리자만 접근이 가능합니다."
-        )
 
 
 # admin/ 전체 조회
 @router.get("", status_code=200, response_model=GetUsersPageResponse)
 @inject
 async def get_users(
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
     page: int = 1,
     items_per_page: int = 18,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
-
-    assert_admin(current_user)
 
     total_count, domain_users = await user_service.get_users(page, items_per_page)
     users = [UserResponse.from_domain(u) for u in domain_users]
@@ -94,26 +84,35 @@ async def get_users(
 
 
 # admin/ 유저 조회
-@router.get("/{user_id}", status_code=200, response_model=UserResponse)
+@router.get("/{user_name}", status_code=200, response_model=UserResponse)
 @inject
-async def get_user(
-    user_id: str,
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+async def get_user_by_name(
+    user_name: str,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
 
-    assert_admin(current_user)
-
-    existing_user = await user_service.get_user_by_id(user_id)
+    existing_user = await user_service.get_user_by_name(user_name)
 
     return UserResponse.from_domain(existing_user)
 
 
+# ────────────────────────────────────────────────────────────
+# 관리자용: /users and /users/{user_name}
+# ────────────────────────────────────────────────────────────
+
+
+def assert_admin(current_user: CurrentUser) -> None:
+    if current_user.role != Role.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="관리자만 접근이 가능합니다."
+        )
+
+
 # admin/ 수정
-@router.put("/{user_id}", status_code=200, response_model=UpdateUserResponse)
+@router.patch("/{user_name}", status_code=200, response_model=UpdateUserResponse)
 @inject
-async def update_user_by_admin(
-    user_id: str,
+async def update_user_info_by_admin(
+    user_name: str,
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     body: UpdateUserBody,
     user_service: UserService = Depends(Provide[Container.user_service]),
@@ -121,8 +120,10 @@ async def update_user_by_admin(
 
     assert_admin(current_user)
 
+    user = await user_service.get_user_by_name(user_name)
+
     updated_user = await user_service.update_user(
-        user_id=user_id,
+        user_id=user.id,
         name=body.name,
         password=body.password,
     )
@@ -130,22 +131,24 @@ async def update_user_by_admin(
 
 
 # admin/ 삭제
-@router.delete("/{user_id}", status_code=204)
+@router.delete("/{user_name}", status_code=204)
 @inject
 async def delete_user_by_admin(
-    user_id: str,
+    user_name: str,
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
     assert_admin(current_user)
-    await user_service.delete_user(user_id)
+    user = await user_service.get_user_by_name(user_name)
+
+    await user_service.delete_user(user.id)
 
 
-# admin/ role 수정
-@router.patch("/{user_id}/role", status_code=200, response_model=UserResponse)
+# $admin/ role 수정
+@router.patch("/{user_name}/role", status_code=200, response_model=UserResponse)
 @inject
 async def change_user_role_by_admin(
-    user_id: str,
+    user_name: str,
     body: UpdateUserRoleBody,
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     user_service: UserService = Depends(Provide[Container.user_service]),
@@ -155,7 +158,7 @@ async def change_user_role_by_admin(
     assert_admin(current_user)
 
     updated_user = await user_service.change_role(
-        user_id=user_id,
+        user_name=user_name,
         role=body.role,
     )
     return UserResponse.from_domain(updated_user)

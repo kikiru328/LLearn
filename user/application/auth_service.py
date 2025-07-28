@@ -3,7 +3,7 @@ import anyio
 from fastapi import HTTPException, status
 from ulid import ULID
 from common.auth import Role, create_access_token
-from user.application.exception import DuplicateEmailError
+from user.application.exception import DuplicateEmailError, ExistNameError
 from user.domain.entity.user import User
 from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.email import Email
@@ -40,6 +40,10 @@ class AuthService:
         if await self.user_repo.find_by_email(Email(email)):
             raise DuplicateEmailError
 
+        # validation name exist
+        if await self.user_repo.find_by_name(Name(name)):
+            raise ExistNameError
+
         # validation
         PasswordValidator.validate(password)
 
@@ -69,13 +73,13 @@ class AuthService:
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials",
+                detail="Eamil not Found",
             )
 
         if not self.crypto.verify(password, user.password.value):  # extract hashed
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials",
+                detail="Password incorrect",
             )
 
         access_token = create_access_token(subject=user.id, role=Role(user.role))

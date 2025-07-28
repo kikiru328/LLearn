@@ -2,7 +2,11 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from user.application.exception import DuplicateEmailError, UserNotFoundError
+from user.application.exception import (
+    DuplicateEmailError,
+    ExistNameError,
+    UserNotFoundError,
+)
 
 
 async def validation_exception_handler(
@@ -26,13 +30,23 @@ async def duplicate_email_handler(
     raise exc
 
 
+async def exist_name_handler(
+    request: Request,
+    exc: Exception,
+):
+    if isinstance(exc, ExistNameError):
+        return JSONResponse(
+            status_code=409, content={"detail": "이미 사용중인 닉네임입니다."}
+        )
+
+
 async def user_not_found_handler(
     request: Request,
     exc: Exception,
 ):
     if isinstance(exc, UserNotFoundError):
         return JSONResponse(
-            status_code=204,
+            status_code=404,
             content={"detail": "유저가 존재하지 않습니다."},
         )
     raise exc
@@ -41,4 +55,5 @@ async def user_not_found_handler(
 def register_user_exception_handlers(app: FastAPI):
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(DuplicateEmailError, duplicate_email_handler)
+    app.add_exception_handler(ExistNameError, exist_name_handler)
     app.add_exception_handler(UserNotFoundError, user_not_found_handler)
