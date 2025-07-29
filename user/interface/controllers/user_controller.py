@@ -26,7 +26,6 @@ async def get_me(
     return GetUserResponse.from_domain(existing_user)
 
 
-# mypage: 수정
 @router.put("/me", response_model=UpdateUserResponse)
 @inject
 async def update_me(
@@ -42,7 +41,6 @@ async def update_me(
     return UpdateUserResponse.from_domain(updated_user)
 
 
-# mypage: 삭제
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 @inject
 async def delete_me(
@@ -52,7 +50,6 @@ async def delete_me(
     await user_service.delete_user(current_user.id)
 
 
-# admin/ 전체 조회
 @router.get("", status_code=200, response_model=GetUsersPageResponse)
 @inject
 async def get_users_for_social(
@@ -75,7 +72,6 @@ async def get_users_for_social(
     )
 
 
-# admin/ 유저 조회
 @router.get("/{user_name}", status_code=200, response_model=GetUserResponse)
 @inject
 async def get_user_by_name(
