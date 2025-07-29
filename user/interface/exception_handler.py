@@ -68,7 +68,8 @@ async def user_not_found_handler(
     raise exc
 
 
-def register_user_exception_handlers(app: FastAPI):
+# register_user_exception_handlers
+def user_exceptions_handlers(app: FastAPI):
     # pydantic
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     # VO

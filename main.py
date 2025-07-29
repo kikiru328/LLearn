@@ -2,32 +2,19 @@ from typing import Any
 from fastapi import FastAPI
 from DI.containers import Container
 
-from user.interface.exception_handler import register_user_exception_handlers
-from curriculum.interface.exception_handler import (
-    register_curriculum_exception_handlers,
-)
+from user.interface.exception_handler import user_exceptions_handlers
 
-from user.interface.controllers.auth_controller import router as auth_routers
-from user.interface.controllers.user_controller import router as user_routers
-from curriculum.interface.controllers.curriculum_controller import (
-    router as curriculum_routers,
-)
-from admin.interface.controllers.admin_controller import router as admin_routers
+from curriculum.interface.exception_handler import curriculum_exceptions_handlers
+from api.v1.routers import v1_router
 
 
 container = Container()
-
 app: Any = FastAPI()
-
 app.container = container
+app.include_router(v1_router)
 
-register_user_exception_handlers(app)
-register_curriculum_exception_handlers(app)
-
-app.include_router(auth_routers)
-app.include_router(admin_routers)
-app.include_router(user_routers)
-app.include_router(curriculum_routers)
+user_exceptions_handlers(app)
+curriculum_exceptions_handlers(app)
 
 
 @app.get("/")
