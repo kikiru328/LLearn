@@ -1,11 +1,18 @@
 class WeekNumber:
     __slots__ = ("_value",)
 
+    MIN_WEEK = 1
+    MAX_WEEK = 24
+
     def __init__(self, raw: int) -> None:
-        if not isinstance(raw, int) or not (1 <= raw <= 24):
+        if not isinstance(raw, int):
+            raise ValueError(f"WeekNumber must be an integer, got {type(raw).__name__}")
+
+        if not (self.MIN_WEEK <= raw <= self.MAX_WEEK):
             raise ValueError(
-                f"WeekNumber must be an integer between 1 and 24 (got {raw})"
+                f"WeekNumber must be between {self.MIN_WEEK} and {self.MAX_WEEK}, got {raw}"
             )
+
         self._value = raw
 
     @property

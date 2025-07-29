@@ -70,26 +70,24 @@ class UserRepository(IUserRepository):
             updated_at=user.updated_at,
         )
 
-    async def update(self, user: UserDomain):
+    async def find_by_name(self, name: Name) -> Optional[UserDomain]:
 
-        existing_user: UserModel | None = await self.session.get(
-            UserModel, user.id
-        )  # find by id
+        query = select(UserModel).where(UserModel.name == str(name))
+        response = await self.session.execute(query)
+        user = response.scalars().first()
 
-        if not existing_user:
-            raise UserNotFoundError(f"user with id={user.id} not found")
+        if not user:
+            return None
 
-        existing_user.name = str(user.name)
-        existing_user.password = user.password.value  # str
-        existing_user.role = user.role
-        existing_user.updated_at = user.updated_at
-
-        self.session.add(existing_user)
-        try:
-            await self.session.commit()
-        except:
-            await self.session.rollback()
-            raise
+        return UserDomain(
+            id=user.id,
+            email=Email(user.email),
+            name=Name(user.name),
+            password=Password(user.password),
+            role=RoleVO(user.role),
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
 
     async def find_users(
         self,
@@ -121,6 +119,27 @@ class UserRepository(IUserRepository):
             for user_model in user_models
         ]
         return (total_count, users)
+
+    async def update(self, user: UserDomain):
+
+        existing_user: UserModel | None = await self.session.get(
+            UserModel, user.id
+        )  # find by id
+
+        if not existing_user:
+            raise UserNotFoundError(f"user with id={user.id} not found")
+
+        existing_user.name = str(user.name)
+        existing_user.password = user.password.value  # str
+        existing_user.role = user.role
+        existing_user.updated_at = user.updated_at
+
+        self.session.add(existing_user)
+        try:
+            await self.session.commit()
+        except:
+            await self.session.rollback()
+            raise
 
     async def delete(self, id: str) -> None:
         existing_user: UserModel | None = await self.session.get(

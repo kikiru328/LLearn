@@ -2,7 +2,6 @@ import re
 
 
 class PasswordValidator:
-
     _PASSWORD_RE = re.compile(
         r"""
         ^(?=.*[A-Z])          # 대문자
@@ -21,5 +20,5 @@ class PasswordValidator:
 
         if not PasswordValidator._PASSWORD_RE.match(raw):
             raise ValueError(
-                "Password must be 8-64 characters with uppercase, lowercase, number, and special character"
+                "비밀번호는 8-64자로 대소문자, 숫자, 특수문자를 포함해야 합니다"
             )
