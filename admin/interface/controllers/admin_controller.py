@@ -85,3 +85,18 @@ async def update_user_by_admin(
         role=body.role,
     )
     return AdminUpdateUserResponse.from_domain(updated_user)
+
+
+@router.delete("/{user_name}", status_code=status.HTTP_204_NO_CONTENT)
+@inject
+async def delete_user_by_admin(
+    user_name: str,
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    user_service: UserService = Depends(Provide[Container.user_service]),
+):
+
+    assert_admin(current_user)
+
+    user = await user_service.get_user_by_name(user_name)
+
+    await user_service.delete_user(user.id)
