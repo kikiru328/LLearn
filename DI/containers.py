@@ -1,6 +1,5 @@
 from dependency_injector import containers, providers
 
-from admin.application.admin_service import AdminService
 from config import get_settings
 from curriculum.application.curriculum_service import CurriculumService
 from curriculum.external.llm_client import RealLLMClient
@@ -75,11 +74,4 @@ class Container(containers.DeclarativeContainer):
         summary_repo=summary_repository,
         feedback_repo=feedback_repository,
         llm_client=llm_client,
-    )
-
-    # Admin
-    admin_service = providers.Factory(
-        AdminService,
-        user_service=user_service,
-        user_repo=user_repository,
     )

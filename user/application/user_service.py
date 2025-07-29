@@ -87,13 +87,3 @@ class UserService:
 
     async def delete_user(self, user_id: str) -> None:
         await self.user_repo.delete(user_id)
-
-    async def change_role(self, user_name: str, role: RoleVO) -> User:
-        user = await self.user_repo.find_by_name(Name(user_name))
-        if user is None:
-            raise UserNotFoundError(f"{user_name} not found")
-
-        user.role = role
-        user.updated_at = datetime.now(timezone.utc)
-        await self.user_repo.update(user)
-        return user

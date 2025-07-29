@@ -2,7 +2,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from dependency_injector.wiring import inject, Provide
 
-from admin.application.admin_service import AdminService
 from common.auth import CurrentUser, get_current_user, Role
 
 from admin.interface.schemas.admin_schema import (
@@ -28,7 +27,7 @@ def assert_admin(current_user: CurrentUser) -> None:
 
 @router.get("/", status_code=200, response_model=AdminGetUsersPageResponse)
 @inject
-async def get_users_for_admin(
+async def get_users_page_for_admin(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     page: int = 1,
     items_per_page: int = 18,
@@ -37,10 +36,7 @@ async def get_users_for_admin(
     # 관리자 권한 확인
     assert_admin(current_user)
 
-    # UserService에서 사용자 목록 조회
     total_count, domain_users = await user_service.get_users(page, items_per_page)
-
-    # Admin 응답 형식으로 변환
     users: list[AdminGetUserResponse] = [
         AdminGetUserResponse.from_domain(u) for u in domain_users
     ]
@@ -53,21 +49,36 @@ async def get_users_for_admin(
     )
 
 
+@router.get("/{username}", status_code=200, response_model=AdminGetUserResponse)
+@inject
+async def get_user_by_name_for_admin(
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    user_name: str,
+    user_service: UserService = Depends(Provide[Container.user_service]),
+):
+
+    # 관리자 권한 확인
+    assert_admin(current_user)
+
+    existsing_user = await user_service.get_user_by_name(user_name)
+    return AdminGetUserResponse.from_domain(existsing_user)
+
+
 # admin/ 수정
 @router.patch("/{user_name}", status_code=200, response_model=AdminUpdateUserResponse)
 @inject
-async def update_user_info_by_admin(
+async def update_user_by_admin(
     user_name: str,
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     body: AdminUpdateUserBody,
-    admin_service: AdminService = Depends(Provide[Container.admin_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
 ) -> AdminUpdateUserResponse:
 
     assert_admin(current_user)
 
-    user = await admin_service.get_user_by_name(user_name)
+    user = await user_service.get_user_by_name(user_name)
 
-    updated_user = await admin_service.update_user(
+    updated_user = await user_service.update_user(
         user_id=user.id,
         name=body.name,
         password=body.password,
