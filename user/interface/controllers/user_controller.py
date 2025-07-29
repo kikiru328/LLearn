@@ -56,6 +56,7 @@ async def delete_me(
 @router.get("", status_code=200, response_model=GetUsersPageResponse)
 @inject
 async def get_users_for_social(
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
     page: int = 1,
     items_per_page: int = 18,
     user_service: UserService = Depends(Provide[Container.user_service]),
@@ -78,6 +79,7 @@ async def get_users_for_social(
 @router.get("/{user_name}", status_code=200, response_model=GetUserResponse)
 @inject
 async def get_user_by_name(
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
     user_name: str,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
