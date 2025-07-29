@@ -11,19 +11,15 @@ class SignUpBody(BaseModel):
 
 
 class SignUpResponse(BaseModel):
-    id: str
     name: str = Field(min_length=2, max_length=32)
     email: EmailStr = Field(max_length=64)
-    role: str
     created_at: datetime
 
     @classmethod
     def from_domain(cls, user: User) -> "SignUpResponse":
         return cls(
-            id=user.id,
             name=str(user.name),
             email=str(user.email),
-            role=user.role.value,
             created_at=user.created_at,
         )
 

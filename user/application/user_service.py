@@ -48,6 +48,7 @@ class UserService:
         user_id: str,
         name: str | None = None,
         password: str | None = None,
+        role: RoleVO | None = None,
     ) -> User:
 
         user = await self.user_repo.find_by_id(id=user_id)
@@ -71,6 +72,10 @@ class UserService:
                 self.crypto.encrypt, password
             )
             user.password = Password(new_hashed_password)
+            user.updated_at = updated_at
+
+        if role:
+            user.role = role
             user.updated_at = updated_at
 
         await self.user_repo.update(user)
