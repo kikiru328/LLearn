@@ -44,7 +44,7 @@ async def summary_not_found_handler(
     raise exc
 
 
-def register_curriculum_exception_handlers(app: FastAPI):
+def curriculum_exceptions_handlers(app: FastAPI):
     app.add_exception_handler(CurriculumNotFoundError, curriculum_not_found_handler)
     app.add_exception_handler(WeekScheduleNotFoundError, week_schdule_not_found_handler)
     app.add_exception_handler(SummaryNotFoundError, week_schdule_not_found_handler)
