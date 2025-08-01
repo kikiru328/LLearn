@@ -1,24 +1,34 @@
 from dataclasses import dataclass
 from datetime import datetime
+from curriculum.domain.value_object.week_number import WeekNumber
 from curriculum.domain.value_object.summary_content import SummaryContent
 
 
 @dataclass
 class Summary:
     id: str
+    curriculum_id: str
+    week_number: WeekNumber
     content: SummaryContent
-    submitted_at: datetime
+    created_at: datetime
+    updated_at: datetime
 
-    def __post_init__(self):  # 입력받는 시점에 확인
-
+    def __post_init__(self):
         if not isinstance(self.id, str):
-            raise TypeError(f"id must be a str instance, got {type(self.id).__name__}")
-
+            raise TypeError(f"id must be str, got {type(self.id).__name__}")
+        if not isinstance(self.curriculum_id, str):
+            raise TypeError(
+                f"curriculum_id must be str, got {type(self.curriculum_id).__name__}"
+            )
+        if not isinstance(self.week_number, WeekNumber):
+            raise TypeError(
+                f"week_number must be WeekNumber, got {type(self.week_number).__name__}"
+            )
         if not isinstance(self.content, SummaryContent):
             raise TypeError(
-                f"content must be a SummaryContent instance, got {type(self.content).__name__}"
+                f"content must be SummaryContent, got {type(self.content).__name__}"
             )
-        if not isinstance(self.submitted_at, datetime):
+        if not isinstance(self.created_at, datetime):
             raise TypeError(
-                f"submitted_at must be a datetime instance, got {type(self.submitted_at).__name__}"
+                f"created_at must be datetime, got {type(self.created_at).__name__}"
             )
