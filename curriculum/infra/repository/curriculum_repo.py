@@ -3,7 +3,6 @@ from sqlalchemy import func, or_, select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.selectable import Select
 from sqlalchemy.orm import selectinload, joinedload
-from curriculum.domain.entity import week_schedule
 from curriculum.application.exception import (
     CurriculumNotFoundError,
     WeekIndexOutOfRangeError,
