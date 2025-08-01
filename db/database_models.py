@@ -5,3 +5,4 @@ import curriculum.infra.db_models.summary  # type: ignore  # noqa: F401
 import curriculum.infra.db_models.feedback  # type: ignore  # noqa: F401
 import curriculum.infra.db_models.like  # type: ignore  # noqa: F401
 import curriculum.infra.db_models.bookmark  # type: ignore  # noqa: F401
+import curriculum.infra.db_models.comment  # type: ignore  # noqa: F401

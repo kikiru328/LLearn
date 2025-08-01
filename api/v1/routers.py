@@ -17,6 +17,12 @@ from curriculum.interface.controllers.social_controller import (
     user_social_router as user_social_router,
 )
 
+from curriculum.interface.controllers.comment_controller import (
+    router as curriculum_comment_router,
+    user_comment_router,
+)
+
+
 from admin.interface.controllers.admin_user_controller import (
     router as admin_user_router,
 )
@@ -50,6 +56,8 @@ v1_router.include_router(admin_bulk_router)
 v1_router.include_router(user_router)
 v1_router.include_router(curriculum_social_router)
 v1_router.include_router(user_social_router)
+v1_router.include_router(curriculum_comment_router)
+v1_router.include_router(user_comment_router)
 
 v1_router.include_router(curriculum_router)
 v1_router.include_router(user_summary_router)

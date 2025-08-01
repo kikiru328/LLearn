@@ -24,3 +24,11 @@ class WeekIndexOutOfRangeError(Exception):
 
 class FeedbackAlreadyExistsError(Exception):
     pass
+
+
+class CommentNotFoundError(Exception):
+    pass
+
+
+class CommentPermissionError(Exception):
+    pass

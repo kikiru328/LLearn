@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 from ulid import ULID
 
 from curriculum.application.exception import CurriculumNotFoundError

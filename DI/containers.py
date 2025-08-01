@@ -17,6 +17,9 @@ from curriculum.application.social_service import SocialService
 from curriculum.infra.repository.like_repo import LikeRepository
 from curriculum.infra.repository.bookmark_repo import BookmarkRepository
 
+from curriculum.application.comment_service import CommentService
+from curriculum.infra.repository.comment_repo import CommentRepository
+
 from db.database import AsyncSessionLocal
 from user.application.auth_service import AuthService
 from user.application.user_service import UserService
@@ -120,5 +123,12 @@ class Container(containers.DeclarativeContainer):
         SocialService,
         like_repo=like_repository,
         bookmark_repo=bookmark_repository,
+        curriculum_repo=curriculum_repository,
+    )
+
+    comment_repository = providers.Factory(CommentRepository, session=db_session)
+    comment_service = providers.Factory(
+        CommentService,
+        comment_repo=comment_repository,
         curriculum_repo=curriculum_repository,
     )

@@ -3,6 +3,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from curriculum.application.exception import (
+    CommentNotFoundError,
+    CommentPermissionError,
     CurriculumNotFoundError,
     FeedbackNotFoundError,
     SummaryNotFoundError,
@@ -116,6 +118,32 @@ async def feedback_already_exist_handler(
         )
 
 
+async def comment_not_found_handler(
+    request: Request,
+    exc: Exception,
+):
+    if isinstance(exc, CommentNotFoundError):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "detail": "해당 피드백은 이미 존재합니다. 한 요약당 하나의 피드백이 제공됩니다."
+            },
+        )
+
+
+async def comment_permisson_handler(
+    request: Request,
+    exc: Exception,
+):
+    if isinstance(exc, CommentPermissionError):
+        return JSONResponse(
+            status_code=400,
+            content={
+                "detail": "해당 피드백은 이미 존재합니다. 한 요약당 하나의 피드백이 제공됩니다."
+            },
+        )
+
+
 # register
 def curriculum_exceptions_handlers(app: FastAPI):
     # pydantic
@@ -134,3 +162,5 @@ def curriculum_exceptions_handlers(app: FastAPI):
     app.add_exception_handler(
         FeedbackAlreadyExistsError, feedback_already_exist_handler
     )
+    app.add_exception_handler(CommentNotFoundError, comment_not_found_handler)
+    app.add_exception_handler(CommentPermissionError, comment_permisson_handler)
