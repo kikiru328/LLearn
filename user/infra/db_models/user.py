@@ -3,11 +3,14 @@ from sqlalchemy import Enum as SQLEnum
 from db.database import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import DateTime, String
-
 from user.domain.value_object.role import RoleVO
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from curriculum.infra.db_models.curriculum import CurriculumModel
 
 
-class User(Base):
+class UserModel(Base):
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(26), primary_key=True)
@@ -17,10 +20,12 @@ class User(Base):
     role: Mapped[RoleVO] = mapped_column(
         SQLEnum(RoleVO, name="user_role"), default=RoleVO.USER, nullable=False
     )
-    curriculums = relationship(
-        "CurriculumModel",
-        back_populates="owner",
-        cascade="all, delete-orphan",
-    )
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    curricula: Mapped[list["CurriculumModel"]] = relationship(
+        "CurriculumModel",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )

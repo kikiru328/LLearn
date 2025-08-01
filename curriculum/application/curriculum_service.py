@@ -1,362 +1,449 @@
 from datetime import datetime, timezone
-from typing import List
+import json
+from typing import List, Optional, Tuple
+from zoneinfo import ZoneInfo
 from ulid import ULID
 from curriculum.application.exception import (
+    CurriculumCountOverError,
     CurriculumNotFoundError,
-    SummaryNotFoundError,
     WeekScheduleNotFoundError,
+    WeekIndexOutOfRangeError,
 )
+from curriculum.application.prompt_templates import GEN_CURRICULUM_PROMPT
 from curriculum.domain.entity.curriculum import Curriculum
-from curriculum.domain.entity.feedback import Feedback
-from curriculum.domain.entity.summary import Summary
 from curriculum.domain.entity.week_schedule import WeekSchedule
 from curriculum.domain.repository.curriculum_repo import ICurriculumRepository
-from curriculum.domain.repository.feedback_repo import IFeedbackRepository
-from curriculum.domain.repository.llm_client_repo import ILLMClient
-from curriculum.domain.repository.summary_repo import ISummaryRepository
-from curriculum.domain.value_object.feedback_comment import FeedbackComment
-from curriculum.domain.value_object.feedback_score import FeedbackScore
-from curriculum.domain.value_object.summary_content import SummaryContent
+from curriculum.domain.value_object.lessons import Lessons
 from curriculum.domain.value_object.title import Title
-from curriculum.domain.value_object.topics import Topics
+from curriculum.domain.value_object.visibility import Visibility
 from curriculum.domain.value_object.week_number import WeekNumber
-
-import logging
-
-logger = logging.getLogger(__name__)
+from curriculum.infra.llm.I_llm_client_repo import ILLMClientRepository
+from user.domain.value_object.role import RoleVO
 
 
 class CurriculumService:
     def __init__(
         self,
         curriculum_repo: ICurriculumRepository,
-        summary_repo: ISummaryRepository,
-        feedback_repo: IFeedbackRepository,
-        llm_client: ILLMClient,
+        llm_client: ILLMClientRepository,
         ulid: ULID = ULID(),
     ) -> None:
-
-        self.ulid = ulid
         self.curriculum_repo: ICurriculumRepository = curriculum_repo
-        self.summary_repo = summary_repo
-        self.feedback_repo = feedback_repo
-        self.llm_client = llm_client
-
-    # --------------------------
-    # Curriculum Service: aggregate root
-    # --------------------------
+        self.llm_client: ILLMClientRepository = llm_client
+        self.ulid: ULID = ulid
 
     async def create_curriculum(
         self,
         owner_id: str,
         title: str,
-        week_schedules: List[WeekSchedule],
-        created_at: datetime | None = None,
+        week_schedules: List[Tuple[int, List[str]]],
+        visibility: Visibility = Visibility.PRIVATE,
     ) -> Curriculum:
-        created_at = created_at or datetime.now(timezone.utc)
-        id = self.ulid.generate()  # new_id
-        curriculum = Curriculum(
-            id=id,
+        """
+        수동으로 커리큘럼 생성, 10개 고정, 가장 오래된거 삭제
+        """
+
+        count = await self.curriculum_repo.count_owner(owner_id)
+        if count >= 10:
+            raise CurriculumCountOverError(
+                "You can only have up to 10 curriculums. Delete one before creating a new one."
+            )
+
+        created_at: datetime = datetime.now(timezone.utc)
+        new_id: str = self.ulid.generate()
+        new_curriculum = Curriculum(
+            id=new_id,
             owner_id=owner_id,
             title=Title(title),
+            visibility=visibility,
             created_at=created_at,
             updated_at=created_at,
-            week_schedules=week_schedules,
+            week_schedules=[
+                WeekSchedule(
+                    week_number=WeekNumber(week_number), lessons=Lessons(lessons)
+                )
+                for week_number, lessons in week_schedules
+            ],
         )
+        await self.curriculum_repo.create(new_curriculum)
+        return new_curriculum
 
-        await self.curriculum_repo.save(curriculum)
-        return curriculum
-
-    async def generate_and_create_curriculum(
+    async def generate_curriculum(
         self,
         owner_id: str,
         goal: str,
-        weeks: int,
+        period_weeks: int,
+        difficulty: str,
+        details: str,
     ) -> Curriculum:
+        prompt = GEN_CURRICULUM_PROMPT.format(
+            goal=goal, period=period_weeks, difficulty=difficulty, details=details
+        )
+        raw = await self.llm_client.generate(prompt)
 
-        raw = await self.llm_client.generate_schedule(goal, weeks)
-        week_schedules: list[WeekSchedule] = []
-        for item in raw:
-            # MyPy가 object로 보는 값을 명시적 변환
-            week_num = int(item["week_number"])
-            topics_list = list(item["topics"])  # runtime엔 list[str]이어야 함
-            week_schedules.append(
-                WeekSchedule(
-                    week_number=WeekNumber(week_num),
-                    topics=Topics(topics_list),
-                )
-            )
-        return await self.create_curriculum(owner_id, goal, week_schedules)
+        if not raw:
+            raise RuntimeError("LLM이 빈 문자열을 반환했습니다")
+
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            raise RuntimeError("LLM 응답 파싱 실패")
+
+        # ─── 1) parsed 타입 분기 ─────────────────────────────
+        if isinstance(parsed, dict):
+            title_str = parsed.get("title", "")
+            schedule_list = parsed.get("schedule", [])
+
+        elif isinstance(parsed, list):
+            first = parsed[0] if parsed else {}
+            if isinstance(first, dict) and "schedule" in first:
+                title_str = first.get("title", "") or goal
+                schedule_list = first.get("schedule", [])
+            else:
+                # B) 이전 버전: [{week_number:…, lessons:[…]}, …] 형태
+                title_str = goal
+                schedule_list = parsed  # parsed 자체가 스케줄 배열
+        else:
+            raise RuntimeError("LLM 응답 형식이 올바르지 않습니다")
+
+        # ─── 2) Title VO 생성 ───────────────────────────────
+        seoul_now = datetime.now(ZoneInfo("Asia/Seoul"))
+        prefix = seoul_now.strftime("%y%m%d%H%M")
+        # LLM이 뱉은 title_str 앞에 붙이기
+        full_title = f"{prefix} {title_str}"
+        title_vo = Title(full_title)
+
+        # ─── 3) schedule → domain 포맷 변환 ─────────────────
+        now = datetime.now(timezone.utc)
+        curriculum_id = self.ulid.generate()
+        weeks: list[tuple[int, list[str]]] = []
+        for item in schedule_list:
+            num = item.get("week_number") or item.get("weekNumber")
+            lessons_raw = item.get("lessons") or item.get("topics")
+            if num is None or lessons_raw is None:
+                raise RuntimeError(f"Invalid schedule item: {item!r}")
+            wn = WeekNumber(num)
+            ls = Lessons(lessons_raw)
+            weeks.append((wn.value, ls.items))
+
+        curriculum = Curriculum(
+            id=curriculum_id,
+            owner_id=owner_id,
+            title=title_vo,
+            visibility=Visibility.PRIVATE,
+            created_at=now,
+            updated_at=now,
+            week_schedules=[WeekSchedule(WeekNumber(w), Lessons(l)) for w, l in weeks],
+        )
+        await self.curriculum_repo.create(curriculum)
+        return curriculum
+
+    async def get_curriculums(
+        self,
+        owner_id: str,
+        role: RoleVO,
+        page: int = 1,
+        items_per_page: int = 10,
+    ):
+        total_count, curriculums = await self.curriculum_repo.find_curriculums(
+            page=page,
+            items_per_page=items_per_page,
+            owner_id=owner_id,
+            role=role,
+        )
+        return total_count, curriculums
 
     async def get_curriculum_by_id(
         self,
         curriculum_id: str,
-    ) -> Curriculum:
-        existing_curriculum = await self.curriculum_repo.find_by_id(curriculum_id)
-        if existing_curriculum is None:
-            raise CurriculumNotFoundError(f"curriculum {curriculum_id} not found")
-        return existing_curriculum
+        owner_id: str,
+        role: RoleVO,
+    ):
+        curriculum = await self.curriculum_repo.find_by_id(
+            id=curriculum_id,
+            role=role,
+            owner_id=owner_id,
+        )
+        if curriculum is None:
+            raise CurriculumNotFoundError(f"Curriculum {curriculum_id} not found")
+        return curriculum
 
-    async def get_curriculums(
+    async def get_curriculum_by_title(
         self,
-        page: int,
-        items_per_page: int,
-    ) -> tuple[int, list[Curriculum]]:
-        curriculums = await self.curriculum_repo.find_curriculums(page, items_per_page)
-        return curriculums
+        title: str,
+        user_id: str,
+    ):
+        curriculum = await self.curriculum_repo.find_by_title(
+            title=title,
+            owner_id=user_id,
+        )
+        if curriculum is None:
+            raise CurriculumNotFoundError(f"{title} curriculum not found")
+        return curriculum
 
-    async def update_curriculum_title(
+    async def update_curriculum(
         self,
         curriculum_id: str,
-        title: str,
-    ):
-        curriculum = await self.get_curriculum_by_id(curriculum_id)
-        curriculum.title = Title(title)
+        owner_id: str,
+        role: RoleVO,
+        title: Optional[str] = None,
+        visibility: Optional[Visibility] = None,
+    ) -> Curriculum:
+
+        curriculum: Curriculum | None = await self.curriculum_repo.find_by_id(
+            id=curriculum_id,
+            owner_id=owner_id,
+            role=role,
+        )
+
+        if curriculum is None:
+            raise CurriculumNotFoundError(f"Curriculum with id={id} not found")
+
+        if title:
+            curriculum.title = Title(title)
+
+        if visibility:
+            curriculum.visibility = visibility
+
         curriculum.updated_at = datetime.now(timezone.utc)
 
         await self.curriculum_repo.update(curriculum)
         return curriculum
 
-    async def delete_curriculum(
+    async def delete_curriculum(self, id: str, owner_id: str, role: RoleVO) -> None:
+        curriculum: Curriculum | None = await self.curriculum_repo.find_by_id(
+            id=id,
+            owner_id=owner_id,
+            role=role,
+        )
+
+        if curriculum is None:
+            raise CurriculumNotFoundError(f"Curriculum with id={id} not found")
+
+        if role != RoleVO.ADMIN and curriculum.owner_id != owner_id:
+            raise PermissionError("You are not allowed to delete this curriculum.")
+
+        await self.curriculum_repo.delete(id)
+
+    async def create_week_schedule(
         self,
         curriculum_id: str,
+        owner_id: str,
+        role: RoleVO,
+        week_number: int,
+        lessons: list[str],
     ):
-        existing = await self.curriculum_repo.find_by_id(curriculum_id)
-        if existing is None:
+        curriculum = await self.curriculum_repo.find_by_id(
+            id=curriculum_id,
+            owner_id=owner_id,
+            role=role,
+        )
+        if not curriculum:
             raise CurriculumNotFoundError(f"curriculum {curriculum_id} not found")
 
-        await self.curriculum_repo.delete(curriculum_id)
+        if role != RoleVO.ADMIN and curriculum.owner_id != owner_id:
+            raise PermissionError("권한이 없습니다.")
 
-    # --------------------------
-    # Week Schedule Service: sub domain (root: curriculum)
-    # --------------------------
+        lessons_vo = Lessons(lessons)
 
-    async def add_week_schedule(
+        await self.curriculum_repo.insert_week_and_shift(
+            curriculum_id=curriculum_id,
+            new_week_number=week_number,
+            lessons=lessons_vo.items,
+        )
+
+        updated = await self.curriculum_repo.find_by_id(
+            id=curriculum_id,
+            owner_id=owner_id,
+            role=role,
+        )
+        if not updated:
+            raise CurriculumNotFoundError(
+                f"curriculum {curriculum_id} not found after insert"
+            )
+
+        return updated
+
+    async def delete_week(
         self,
         curriculum_id: str,
+        owner_id: str,
+        role: RoleVO,
         week_number: int,
-        topics: list[str],
     ):
 
-        week_vo = WeekNumber(week_number)
-        topics_vo = Topics(topics)
-        curriculum = await self.get_curriculum_by_id(curriculum_id)
-
-        new_schedule = WeekSchedule(
-            week_number=week_vo,
-            topics=topics_vo,
+        curriculum = await self.curriculum_repo.find_by_id(
+            id=curriculum_id,
+            owner_id=owner_id,
+            role=role,
         )
 
-        curriculum.week_schedules.append(new_schedule)
+        if not curriculum:
+            raise CurriculumNotFoundError(f"Curriculum with id={id} not found")
 
-        await self.curriculum_repo.update(curriculum)
+        if not any(
+            week.week_number.value == week_number for week in curriculum.week_schedules
+        ):
+            raise WeekScheduleNotFoundError(...)
 
-        return new_schedule
-
-    async def get_week_schedule(
-        self,
-        curriculum_id: str,
-        week_number: int,
-    ) -> WeekSchedule:
-        week_vo = WeekNumber(week_number)
-        curriculum = await self.get_curriculum_by_id(curriculum_id)
-        for schedule in curriculum.week_schedules:
-            if schedule.week_number == week_vo:
-                return schedule
-        raise CurriculumNotFoundError(
-            f"WeekSchedule for week {week_number} not found in curriculum {curriculum_id}"
+        await self.curriculum_repo.delete_week_and_shift(
+            curriculum_id=curriculum_id,
+            week_number=week_number,
         )
 
-    async def get_list_week_schedules(
+    async def create_lesson(
         self,
         curriculum_id: str,
-    ) -> list[WeekSchedule]:
-        curriculum = await self.get_curriculum_by_id(curriculum_id)
-        return curriculum.week_schedules
-
-    async def update_week_schedule(
-        self,
-        curriculum_id: str,
+        owner_id: str,
+        role: RoleVO,
         week_number: int,
-        topics: list,
-    ) -> WeekSchedule:
-        curriculum = await self.get_curriculum_by_id(curriculum_id)
-        week_vo = WeekNumber(week_number)
-
-        for schedule in curriculum.week_schedules:
-            if schedule.week_number == week_vo:
-                schedule.topics = Topics(topics)
-                curriculum.updated_at = datetime.now(timezone.utc)
-                await self.curriculum_repo.update(curriculum)
-                return schedule
-        raise WeekScheduleNotFoundError(
-            f"WeekSchedule for week {week_number} not found in curriculum {curriculum_id}"
-        )
-
-    async def delete_week_schedule(
-        self,
-        curriculum_id: str,
-        week_number: int,
+        lesson: str,
+        lesson_index: int | None = None,
     ):
-        summaries = await self.get_summaries_by_week(curriculum_id, week_number)
-        for summary in summaries:
-            await self.delete_summary(summary.id)
-
-        curriculum = await self.get_curriculum_by_id(curriculum_id)
-        week_vo = WeekNumber(week_number)
-
-        original_len = len(curriculum.week_schedules)
-        curriculum.week_schedules = [
-            ws for ws in curriculum.week_schedules if ws.week_number != week_vo
-        ]
-        if len(curriculum.week_schedules) == original_len:
-            raise WeekScheduleNotFoundError(
-                f"WeekSchedule for week {week_number} not found in curriculum {curriculum_id}"
-            )
-        await self.curriculum_repo.update(curriculum)
-
-    # --------------------------
-    # Summary Service: sub domain (root: curriculum)
-    # --------------------------
-
-    async def submit_summary(
-        self,
-        curriculum_id: str,
-        week_number: int,
-        content: SummaryContent,
-        submitted_at: datetime | None = None,
-    ):
-        curriculum = await self.get_curriculum_by_id(curriculum_id)
-        week_vo = WeekNumber(week_number)
-        submitted_at = submitted_at or datetime.now(timezone.utc)
-        summary = Summary(
-            id=self.ulid.generate(), content=content, submitted_at=submitted_at
+        curriculum = await self.curriculum_repo.find_by_id(
+            id=curriculum_id,
+            role=role,
+            owner_id=owner_id,
         )
-        await self.summary_repo.save(
-            curriculum.id,
-            week_vo,
-            summary,
+        if not curriculum:
+            raise CurriculumNotFoundError(f"curriculum {curriculum_id} not found")
+
+        if role != RoleVO.ADMIN and curriculum.owner_id != owner_id:
+            raise PermissionError("권한이 없습니다")
+
+        week_schedule = next(
+            (
+                week
+                for week in curriculum.week_schedules
+                if week.week_number.value == week_number
+            ),
+            None,
         )
-        return summary
+        if not week_schedule:
+            raise WeekScheduleNotFoundError(f"Week {week_number} not found")
 
-    async def get_summaries_by_week(
-        self,
-        curriculum_id: str,
-        week_number: int,
-    ) -> list[Summary]:
-        curriculum = await self.get_curriculum_by_id(curriculum_id)
-        # VO 변환
-        week_vo = WeekNumber(week_number)
-        return await self.summary_repo.find_by_week(curriculum.id, week_vo)
+        lessons = week_schedule.lessons.items
+        max_index = len(lessons)
+        insert_index = lesson_index if lesson_index is not None else max_index
 
-    async def submit_summary_with_auto_feedback(
-        self,
-        curriculum_id: str,
-        week_number: int,
-        content: SummaryContent,
-        submitted_at: datetime | None = None,
-    ) -> tuple[Summary, Feedback]:
-        # 1) Summary 제출
-        summary = await self.submit_summary(
-            curriculum_id, week_number, content, submitted_at
+        if not (0 <= insert_index <= max_index):
+            raise WeekIndexOutOfRangeError("lesson_index out of range")
+
+        lessons.insert(insert_index, lesson)
+
+        await self.curriculum_repo.insert_lesson(
+            curriculum_id=curriculum_id,
+            week_number=week_number,
+            lesson=lesson,
+            lesson_index=insert_index,
         )
 
-        try:
-            # 2) 해당 주차 학습 주제 조회
-            week_schedule = await self.get_week_schedule(curriculum_id, week_number)
-
-            # 3) LLM으로 피드백 생성
-            feedback_data = await self.llm_client.generate_feedback(
-                topics=week_schedule.topics.items, summary_content=content.value
-            )
-
-            comment = feedback_data.get("comment", "")
-            score: object = feedback_data.get("score", 0)
-
-            if not isinstance(comment, str) or not isinstance(score, int):
-                raise ValueError("Invalid feedback data format from LLM")
-
-            # 4) 피드백 저장
-            feedback = await self.provide_feedback(
-                curriculum_id=curriculum_id,
-                week_number=week_number,
-                summary_id=summary.id,
-                comment=FeedbackComment(comment),
-                score=FeedbackScore(score),
-            )
-
-            return summary, feedback
-
-        except Exception as e:
-            # LLM 실패 시 summary는 유지, 에러 로깅
-            logger.error(f"Failed to generate auto feedback: {e}")
-            # summary만 반환하거나 기본 피드백 생성
-            raise e
-
-    async def provide_feedback(
-        self,
-        curriculum_id: str,
-        week_number: int,
-        summary_id: str,
-        comment: FeedbackComment,
-        score: FeedbackScore,
-    ) -> Feedback:
-        # 1) 검증: curriculum exists
-        await self.get_curriculum_by_id(curriculum_id)
-        # 2) 검증: summary exists for given week
-        week_vo = WeekNumber(week_number)
-        summaries = await self.summary_repo.find_by_week(curriculum_id, week_vo)
-        if not any(s.id == summary_id for s in summaries):
-            raise SummaryNotFoundError(
-                f"Summary {summary_id} not found in curriculum {curriculum_id} week {week_number}"
-            )
-        # 3) 생성 및 저장
-        now = datetime.now(timezone.utc)
-        feedback = Feedback(
-            id=self.ulid.generate(), comment=comment, score=score, created_at=now
+        week_schedule.lessons = Lessons(
+            week_schedule.lessons.items[:insert_index]
+            + [lesson]
+            + week_schedule.lessons.items[insert_index:]
         )
-        await self.feedback_repo.save(
-            curriculum_id,
-            week_vo,
-            summary_id,
-            feedback,
-        )
-        return feedback
+        return curriculum
 
-    async def delete_summary(self, summary_id: str) -> None:
-        # 1) cascade delete feedbacks
-        await self.feedback_repo.delete_by_summary(summary_id)
-        # 2) delete summary itself
-        await self.summary_repo.delete(summary_id)
+        # updated = await self.curriculum_repo.find_by_id(
+        #     id=curriculum_id,
+        #     owner_id=owner_id,
+        #     role=role,
+        # )
+        # if not updated:
+        #     raise CurriculumNotFoundError(f"{curriculum_id} not found after insert")
+        # return updated
 
-    # --------------------------
-    # Feedback Service: sub domain (root: curriculum)
-    # --------------------------
-
-    async def get_feedbacks_by_week(
+    async def update_lesson(
         self,
         curriculum_id: str,
+        owner_id: str,
+        role: RoleVO,
         week_number: int,
-    ) -> list[Feedback]:
-        # 1) 커리큘럼 검증
-        await self.get_curriculum_by_id(curriculum_id)
-        # 2) VO 변환
-        week_vo = WeekNumber(week_number)
-        # 3) 조회
-        return await self.feedback_repo.find_by_week(curriculum_id, week_vo)
+        lesson_index: int,
+        new_lesson: str,
+    ) -> Curriculum:
 
-    async def get_all_feedbacks(
+        curriculum = await self.curriculum_repo.find_by_id(
+            id=curriculum_id,
+            owner_id=owner_id,
+            role=role,
+        )
+
+        if not curriculum:
+            raise CurriculumNotFoundError(f"{curriculum_id} curriculum not found")
+
+        week_schedule = next(
+            (
+                week
+                for week in curriculum.week_schedules
+                if week.week_number.value == week_number
+            ),
+            None,
+        )
+
+        if not week_schedule:
+            raise WeekScheduleNotFoundError(f"Week {week_number} not found")
+
+        if not (0 <= lesson_index < len(week_schedule.lessons.items)):
+            raise WeekIndexOutOfRangeError("lesson_index out of range")
+
+        lessons_list = week_schedule.lessons.items
+        lessons_list[lesson_index] = new_lesson
+
+        await self.curriculum_repo.update_week_schedule(
+            curriculum_id=curriculum_id,
+            week_number=week_number,
+            lessons=lessons_list,
+        )
+
+        week_schedule.lessons = Lessons(lessons_list)
+
+        return curriculum
+
+    async def delete_lesson(
         self,
         curriculum_id: str,
-    ) -> list[Feedback]:
-        # 1) 커리큘럼 검증
-        await self.get_curriculum_by_id(curriculum_id)
-        # 2) 전체 조회
-        return await self.feedback_repo.find_all(curriculum_id)
+        owner_id: str,
+        role: RoleVO,
+        week_number: int,
+        lesson_index: int,
+    ) -> Curriculum:
 
-    async def delete_feedbacks_by_summary(
-        self,
-        summary_id: str,
-    ) -> None:
-        # summary 존재 여부는 summary_repo로 검증해도 되고, 단순히 삭제만 해도 무방
-        await self.feedback_repo.delete_by_summary(summary_id)
+        curriculum = await self.curriculum_repo.find_by_id(
+            id=curriculum_id,
+            role=role,
+            owner_id=owner_id,
+        )
+
+        if not curriculum:
+            raise CurriculumNotFoundError(f"Curriculum {curriculum_id} not found")
+
+        if role != RoleVO.ADMIN and curriculum.owner_id != owner_id:
+            raise PermissionError("권한이 없습니다")
+
+        week_schedule = next(
+            (
+                week_schedule
+                for week_schedule in curriculum.week_schedules
+                if week_schedule.week_number.value == week_number
+            ),
+            None,
+        )
+        if not week_schedule:
+            raise WeekScheduleNotFoundError(f"Week {week_number} not found")
+
+        if not (0 <= lesson_index < week_schedule.lessons.count):
+            raise WeekIndexOutOfRangeError("lesson_index out of range")
+
+        await self.curriculum_repo.delete_lesson(
+            curriculum_id=curriculum_id,
+            week_number=week_number,
+            lesson_index=lesson_index,
+        )
+
+        lessons = week_schedule.lessons.items
+        lessons.pop(lesson_index)
+        week_schedule.lessons = Lessons(lessons)
+
+        return curriculum

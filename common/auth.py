@@ -19,7 +19,7 @@ class Role(StrEnum):
     USER = "USER"
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")  # 0729
 
 
 @dataclass
@@ -49,7 +49,7 @@ def create_access_token(
     role: Role,
     expires_delta: timedelta | None = None,
 ) -> str:
-    expire_dt = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=1))
+    expire_dt = datetime.now(timezone.utc) + (expires_delta or timedelta(hours=5))
     to_encode = {
         "sub": subject,
         "role": role.value,

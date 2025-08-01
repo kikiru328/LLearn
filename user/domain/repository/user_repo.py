@@ -3,6 +3,7 @@ from typing import Optional
 
 from user.domain.entity.user import User
 from user.domain.value_object.email import Email
+from user.domain.value_object.name import Name
 
 
 class IUserRepository(metaclass=ABCMeta):
@@ -19,7 +20,7 @@ class IUserRepository(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def update(self, user: User) -> None:
+    async def find_by_name(self, name: Name) -> Optional[User]:
         raise NotImplementedError
 
     @abstractmethod
@@ -29,5 +30,9 @@ class IUserRepository(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, id: str):
+    async def update(self, user: User) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete(self, id: str) -> None:
         raise NotImplementedError

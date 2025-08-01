@@ -1,90 +1,92 @@
-# curriculum/infra/repository/feedback_repo_impl.py
-
-from datetime import datetime
-from typing import List, cast
+from typing import List, Optional, Tuple
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
-from curriculum.infra.db_models.curriculum import FeedbackModel
-from curriculum.domain.entity.feedback import Feedback as FeedbackEntity
+from curriculum.domain.entity.feedback import Feedback
+from curriculum.domain.repository.feedback_repo import IFeedbackRepository
 from curriculum.domain.value_object.feedback_comment import FeedbackComment
 from curriculum.domain.value_object.feedback_score import FeedbackScore
+from curriculum.infra.db_models.feedback import FeedbackModel
 
 
-class FeedbackRepository:
-    def __init__(self, session: AsyncSession):
-        self._session = session
+class FeedbackRepository(IFeedbackRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self.session: AsyncSession = session
 
-    async def save(
-        self,
-        curriculum_id: str,
-        week_number_vo,
-        summary_id: str,
-        feedback_entity: FeedbackEntity,
-    ) -> None:
-        feedback_model = FeedbackModel(
-            id=feedback_entity.id,
-            summary_id=summary_id,
-            comment=feedback_entity.comment.value,
-            score=feedback_entity.score.value,
-            created_at=feedback_entity.created_at,
+    async def create(self, feedback: Feedback) -> None:
+        new = FeedbackModel(
+            id=feedback.id,
+            summary_id=feedback.summary_id,
+            comment=feedback.comment.value,
+            score=feedback.score.value,
+            created_at=feedback.created_at,
+            updated_at=feedback.updated_at,
         )
-        self._session.add(feedback_model)
-        await self._session.commit()
+        self.session.add(new)
+        try:
+            await self.session.commit()
+        except:
+            await self.session.rollback()
+            raise
 
-    async def find_by_week(
+    async def find_by_summary_id(self, summary_id: str) -> Optional[Feedback]:
+
+        query = select(FeedbackModel).where(FeedbackModel.summary_id == summary_id)
+        result = await self.session.execute(query)
+        feedback_model = result.scalar_one_or_none()
+        # model: FeedbackModel | None = await self.session.get(FeedbackModel, summary_id)
+        if feedback_model is None:
+            return None
+
+        return Feedback(
+            id=feedback_model.id,
+            summary_id=feedback_model.summary_id,
+            comment=FeedbackComment(feedback_model.comment),
+            score=FeedbackScore(feedback_model.score),
+            created_at=feedback_model.created_at,
+            updated_at=feedback_model.updated_at,
+        )
+
+    async def delete(self, id: str) -> None:
+        model: FeedbackModel | None = await self.session.get(FeedbackModel, id)
+        if not model:
+            return
+        await self.session.delete(model)
+        try:
+            await self.session.commit()
+        except:
+            await self.session.rollback()
+            raise
+
+    async def find_all_feedbacks_for_admin(
         self,
-        curriculum_id: str,
-        week_number_vo,
-    ) -> List[FeedbackEntity]:
-        # curriculum_id, week_number not used directly, filtering happens via summary_id if needed
-        query = select(FeedbackModel)
-        result = await self._session.execute(query)
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Feedback]]:
+        """관리자용 모든 피드백 조회"""
+        query = select(FeedbackModel).order_by(FeedbackModel.created_at.desc())
+
+        count_query = select(func.count()).select_from(query.subquery())
+        total_count = await self.session.scalar(count_query)
+
+        offset = (page - 1) * items_per_page
+        paged = query.limit(items_per_page).offset(offset)
+        result = await self.session.execute(paged)
         feedback_models = result.scalars().all()
 
-        feedbacks: List[FeedbackEntity] = []
-        for feedback_model in feedback_models:
-            # 명시적 캐스트
-            created_at: datetime = cast(datetime, feedback_model.created_at)
-
-            feedbacks.append(
-                FeedbackEntity(
-                    id=feedback_model.id,
-                    comment=FeedbackComment(feedback_model.comment),
-                    score=FeedbackScore(feedback_model.score),
-                    created_at=created_at,
-                )
+        feedbacks = [
+            Feedback(
+                id=model.id,
+                summary_id=model.summary_id,
+                comment=FeedbackComment(model.comment),
+                score=FeedbackScore(model.score),
+                created_at=model.created_at,
+                updated_at=model.updated_at,
             )
-        return feedbacks
+            for model in feedback_models
+        ]
+        return total_count, feedbacks
 
-    async def find_all(
-        self,
-        curriculum_id: str,
-    ) -> List[FeedbackEntity]:
-        query = select(FeedbackModel)
-        result = await self._session.execute(query)
-        feedback_models = result.scalars().all()
-
-        all_feedbacks: List[FeedbackEntity] = []
-        for feedback_model in feedback_models:
-            # 명시적 캐스트
-            created_at_all: datetime = cast(datetime, feedback_model.created_at)
-
-            all_feedbacks.append(
-                FeedbackEntity(
-                    id=feedback_model.id,
-                    comment=FeedbackComment(feedback_model.comment),
-                    score=FeedbackScore(feedback_model.score),
-                    created_at=created_at_all,
-                )
-            )
-        return all_feedbacks
-
-    async def delete_by_summary(
-        self,
-        summary_id: str,
-    ) -> None:
-        delete_statement = delete(FeedbackModel).where(
-            FeedbackModel.summary_id == summary_id
-        )
-        await self._session.execute(delete_statement)
-        await self._session.commit()
+    async def count_all(self) -> int:
+        """전체 피드백 수 조회"""
+        query = select(func.count()).select_from(FeedbackModel)
+        return await self.session.scalar(query)

@@ -1,42 +1,28 @@
 from abc import ABCMeta, abstractmethod
-from typing import List
+from typing import List, Optional, Tuple
 from curriculum.domain.entity.feedback import Feedback
-from curriculum.domain.value_object.week_number import WeekNumber
 
 
 class IFeedbackRepository(metaclass=ABCMeta):
     @abstractmethod
-    async def save(
-        self,
-        curriculum_id: str,
-        week_number: WeekNumber,
-        summary_id: str,
-        feedback: Feedback,
-    ) -> None:
-        """주어진 커리큘럼과 주차에 대한 피드백을 저장합니다."""
+    async def create(self, feedback: Feedback) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def find_by_week(
-        self,
-        curriculum_id: str,
-        week_number: WeekNumber,
-    ) -> List[Feedback]:
-        """특정 커리큘럼의 지정된 주차에 제출된 모든 피드백을 반환합니다."""
+    async def find_by_summary_id(self, summary_id: str) -> Optional[Feedback]:
         raise NotImplementedError
 
     @abstractmethod
-    async def find_all(
-        self,
-        curriculum_id: str,
-    ) -> List[Feedback]:
-        """특정 커리큘럼에 달린 모든 피드백을 반환합니다."""
+    async def delete(self, id: str) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_by_summary(
+    async def find_all_feedbacks_for_admin(
         self,
-        summary_id: str,
-    ) -> None:
-        """주어진 요약 ID에 연관된 모든 피드백을 삭제합니다."""
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Feedback]]:
+        raise NotImplementedError
+
+    async def count_all(self) -> int:
         raise NotImplementedError
