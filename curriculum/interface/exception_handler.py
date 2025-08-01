@@ -112,9 +112,7 @@ async def feedback_already_exist_handler(
     if isinstance(exc, FeedbackAlreadyExistsError):
         return JSONResponse(
             status_code=400,
-            content={
-                "detail": "해당 피드백은 이미 존재합니다. 한 요약당 하나의 피드백이 제공됩니다."
-            },
+            content={"detail": "해당 피드백은 이미 존재합니다."},
         )
 
 
@@ -125,9 +123,7 @@ async def comment_not_found_handler(
     if isinstance(exc, CommentNotFoundError):
         return JSONResponse(
             status_code=400,
-            content={
-                "detail": "해당 피드백은 이미 존재합니다. 한 요약당 하나의 피드백이 제공됩니다."
-            },
+            content={"detail": "해당 댓글을 찾을 수 없습니다."},
         )
 
 
@@ -138,9 +134,7 @@ async def comment_permisson_handler(
     if isinstance(exc, CommentPermissionError):
         return JSONResponse(
             status_code=400,
-            content={
-                "detail": "해당 피드백은 이미 존재합니다. 한 요약당 하나의 피드백이 제공됩니다."
-            },
+            content={"detail": "댓글에 대한 권한이 없습니다."},
         )
 
 
