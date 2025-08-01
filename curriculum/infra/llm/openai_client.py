@@ -31,7 +31,8 @@ class OpenAILLMClient(ILLMClientRepository):
                         "The JSON must be an array with these fields "
                         "`title` (string), and `schedule` (array of objects with {week_number:int, topics:list[str]})."
                         "no markdown, no explanations, nothing else "
-                        "Curriculum for Computer Science, refer to OSSU curriculum "
+                        "if request for Computer Science, refer to OSSU curriculum "
+                        "else, generate as request"
                     ),
                 },
                 {"role": "user", "content": prompt},

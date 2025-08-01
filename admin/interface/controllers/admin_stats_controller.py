@@ -16,7 +16,7 @@ from curriculum.application.summary_service import SummaryService
 from curriculum.application.feedback_service import FeedbackService
 
 
-router = APIRouter(prefix="/admins", tags=["admin-stats"])
+router = APIRouter(prefix="/admins", tags=["admin/stats"])
 
 
 def assert_admin(current_user: CurrentUser) -> None:

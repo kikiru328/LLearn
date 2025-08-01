@@ -1,8 +1,7 @@
 import user.infra.db_models.user  # type: ignore  # noqa: F401
-
-# import curriculum.infra.db_models.curriculum  # type: ignore  # noqa: F401
-
 import curriculum.infra.db_models.curriculum  # type: ignore  # noqa: F401
 import curriculum.infra.db_models.week_schedule  # type: ignore  # noqa: F401
 import curriculum.infra.db_models.summary  # type: ignore  # noqa: F401
 import curriculum.infra.db_models.feedback  # type: ignore  # noqa: F401
+import curriculum.infra.db_models.like  # type: ignore  # noqa: F401
+import curriculum.infra.db_models.bookmark  # type: ignore  # noqa: F401

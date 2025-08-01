@@ -3,12 +3,20 @@ from dependency_injector import containers, providers
 from config import get_settings
 
 from curriculum.application.curriculum_service import CurriculumService
-from curriculum.application.feedback_service import FeedbackService
-from curriculum.application.summary_service import SummaryService
-from curriculum.infra.llm.openai_client import OpenAILLMClient
 from curriculum.infra.repository.curriculum_repo import CurriculumRepository
-from curriculum.infra.repository.feedback_repo import FeedbackRepository
+
+from curriculum.application.summary_service import SummaryService
 from curriculum.infra.repository.summary_repo import SummaryRepository
+
+from curriculum.application.feedback_service import FeedbackService
+from curriculum.infra.repository.feedback_repo import FeedbackRepository
+
+from curriculum.infra.llm.openai_client import OpenAILLMClient
+
+from curriculum.application.social_service import SocialService
+from curriculum.infra.repository.like_repo import LikeRepository
+from curriculum.infra.repository.bookmark_repo import BookmarkRepository
+
 from db.database import AsyncSessionLocal
 from user.application.auth_service import AuthService
 from user.application.user_service import UserService
@@ -101,4 +109,16 @@ class Container(containers.DeclarativeContainer):
         curriculum_repo=curriculum_repository,
         llm_client=llm_client,
         ulid=providers.Singleton(ULID),
+    )
+
+    # Social
+
+    like_repository = providers.Factory(LikeRepository, session=db_session)
+    bookmark_repository = providers.Factory(BookmarkRepository, session=db_session)
+
+    social_service = providers.Factory(
+        SocialService,
+        like_repo=like_repository,
+        bookmark_repo=bookmark_repository,
+        curriculum_repo=curriculum_repository,
     )

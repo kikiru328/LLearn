@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import json
+import re
 from typing import List, Optional, Tuple
 from zoneinfo import ZoneInfo
 from ulid import ULID
@@ -79,13 +80,27 @@ class CurriculumService:
         prompt = GEN_CURRICULUM_PROMPT.format(
             goal=goal, period=period_weeks, difficulty=difficulty, details=details
         )
-        raw = await self.llm_client.generate(prompt)
+        raw: str = await self.llm_client.generate(prompt)
+
+        def _strip_markdown_fences(text: str) -> str:
+            """
+            ``` 또는 ```json 같은 마크다운 펜스를 제거하고,
+            앞뒤 공백/줄바꿈을 없앤 순수 JSON 문자열을 반환.
+            """
+            # 1) ```json\n 또는 ```\n 식의 펜스 제거
+            without_fences = re.sub(r"```(?:json)?\s*\n?", "", text)
+            # 2) 남아있는 ``` 제거
+            without_fences = without_fences.replace("```", "")
+            # 3) 앞뒤 공백·줄바꿈 트리밍
+            return without_fences.strip()
+
+        clean = _strip_markdown_fences(raw)
 
         if not raw:
             raise RuntimeError("LLM이 빈 문자열을 반환했습니다")
 
         try:
-            parsed = json.loads(raw)
+            parsed = json.loads(clean)
         except json.JSONDecodeError:
             raise RuntimeError("LLM 응답 파싱 실패")
 
