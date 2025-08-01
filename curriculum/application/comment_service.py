@@ -2,20 +2,16 @@ from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 from ulid import ULID
 
-from curriculum.application.exception import CurriculumNotFoundError
+from curriculum.application.exception import (
+    CommentNotFoundError,
+    CommentPermissionError,
+    CurriculumNotFoundError,
+)
 from curriculum.domain.entity.comment import Comment
 from curriculum.domain.repository.comment_repo import ICommentRepository
 from curriculum.domain.repository.curriculum_repo import ICurriculumRepository
 from curriculum.domain.value_object.comment_content import CommentContent
 from user.domain.value_object.role import RoleVO
-
-
-class CommentNotFoundError(Exception):
-    pass
-
-
-class CommentPermissionError(Exception):
-    pass
 
 
 class CommentService:
