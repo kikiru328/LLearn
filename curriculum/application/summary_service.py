@@ -14,6 +14,7 @@ from curriculum.application.exception import (
     SummaryNotFoundError,
 )
 from user.domain.value_object.role import RoleVO
+from monitoring.metrics import increment_summary_created
 
 
 class SummaryService:
@@ -67,6 +68,8 @@ class SummaryService:
         )
 
         await self.summary_repo.create(summary=summary)
+
+        increment_summary_created()
 
         return summary, None  # sepearte feedback. no auto feedback
 

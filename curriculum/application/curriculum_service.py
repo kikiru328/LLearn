@@ -4,6 +4,13 @@ import re
 from typing import List, Optional, Tuple
 from zoneinfo import ZoneInfo
 from ulid import ULID
+
+from monitoring.metrics import (
+    track_llm_metrics,
+    increment_curriculum_created,
+    track_db_metrics,
+)
+
 from curriculum.application.exception import (
     CurriculumCountOverError,
     CurriculumNotFoundError,
@@ -33,6 +40,7 @@ class CurriculumService:
         self.llm_client: ILLMClientRepository = llm_client
         self.ulid: ULID = ulid
 
+    @track_db_metrics("create", "curriculum")
     async def create_curriculum(
         self,
         owner_id: str,
@@ -67,8 +75,13 @@ class CurriculumService:
             ],
         )
         await self.curriculum_repo.create(new_curriculum)
+
+        increment_curriculum_created("manual")
+
         return new_curriculum
 
+    @track_llm_metrics("curriculum_generation")
+    @track_db_metrics("create", "curriculum")
     async def generate_curriculum(
         self,
         owner_id: str,
@@ -148,9 +161,15 @@ class CurriculumService:
             visibility=Visibility.PRIVATE,
             created_at=now,
             updated_at=now,
-            week_schedules=[WeekSchedule(WeekNumber(w), Lessons(l)) for w, l in weeks],
+            week_schedules=[
+                WeekSchedule(WeekNumber(week), Lessons(lesson))
+                for week, lesson in weeks
+            ],
         )
         await self.curriculum_repo.create(curriculum)
+
+        increment_curriculum_created("generated")
+
         return curriculum
 
     async def get_curriculums(

@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus 자체 모니터링
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # FastAPI 애플리케이션 모니터링
+  - job_name: 'curriculum-api'
+    static_configs:
+      - targets: ['app:8000']  # Docker 컨테이너 이름 사용
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # 추가 서비스들 (필요시)
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['db:3306']
+    scrape_interval: 60s

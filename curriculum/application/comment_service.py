@@ -12,6 +12,7 @@ from curriculum.domain.repository.comment_repo import ICommentRepository
 from curriculum.domain.repository.curriculum_repo import ICurriculumRepository
 from curriculum.domain.value_object.comment_content import CommentContent
 from user.domain.value_object.role import RoleVO
+from monitoring.metrics import increment_comment
 
 
 class CommentService:
@@ -70,6 +71,9 @@ class CommentService:
         )
 
         await self.comment_repo.create(comment)
+
+        increment_comment()
+
         return comment
 
     async def get_curriculum_comments(

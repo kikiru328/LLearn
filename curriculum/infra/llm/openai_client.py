@@ -4,6 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from config import Settings, get_settings
 from curriculum.infra.llm.I_llm_client_repo import ILLMClientRepository
+from monitoring.metrics import track_llm_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class OpenAILLMClient(ILLMClientRepository):
         self.api_key: str = api_key or settings.llm_api_key
         self.endpoint: str = endpoint or settings.llm_endpoint
 
+    @track_llm_metrics("curriculum_generation")
     async def generate(self, prompt: str, timeout: float | None = 10.0) -> str:
         payload = {
             "model": "gpt-4o",
@@ -52,6 +54,7 @@ class OpenAILLMClient(ILLMClientRepository):
                 logger.info("🔍 LLM RAW RESPONSE: %s", text)
                 return text
 
+    @track_llm_metrics("feedback_generation")
     async def generate_feedback(
         self,
         lessons: List[str],
