@@ -1,8 +1,6 @@
 from typing import Optional, List, Tuple
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-
 from curriculum.domain.entity.comment import Comment
 from curriculum.domain.repository.comment_repo import ICommentRepository
 from curriculum.domain.value_object.comment_content import CommentContent
@@ -102,7 +100,7 @@ class CommentRepository(ICommentRepository):
         )
 
         if not include_deleted:
-            base_query = base_query.where(CommentModel.is_deleted == False)
+            base_query = base_query.where(~CommentModel.is_deleted)
 
         # 총 개수 조회
         count_query = select(func.count()).select_from(base_query.subquery())
@@ -135,7 +133,7 @@ class CommentRepository(ICommentRepository):
         )
 
         if not include_deleted:
-            base_query = base_query.where(CommentModel.is_deleted == False)
+            base_query = base_query.where(~CommentModel.is_deleted)
 
         # 총 개수 조회
         count_query = select(func.count()).select_from(base_query.subquery())
@@ -166,7 +164,7 @@ class CommentRepository(ICommentRepository):
         )
 
         if not include_deleted:
-            query = query.where(CommentModel.is_deleted == False)
+            query = query.where(~CommentModel.is_deleted)
 
         return await self.session.scalar(query) or 0
 
@@ -181,7 +179,7 @@ class CommentRepository(ICommentRepository):
         )
 
         if not include_deleted:
-            query = query.where(CommentModel.is_deleted == False)
+            query = query.where(~CommentModel.is_deleted)
 
         return await self.session.scalar(query) or 0
 
@@ -196,7 +194,7 @@ class CommentRepository(ICommentRepository):
         base_query = select(CommentModel).where(CommentModel.user_id == user_id)
 
         if not include_deleted:
-            base_query = base_query.where(CommentModel.is_deleted == False)
+            base_query = base_query.where(~CommentModel.is_deleted)
 
         # 총 개수 조회
         count_query = select(func.count()).select_from(base_query.subquery())
