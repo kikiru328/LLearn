@@ -30,7 +30,7 @@ def assert_admin(current_user: CurrentUser) -> None:
 async def get_users_page_for_admin(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     page: int = 1,
-    items_per_page: int = 18,
+    items_per_page: int = 10,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
     # 관리자 권한 확인
@@ -49,37 +49,35 @@ async def get_users_page_for_admin(
     )
 
 
-@router.get("/{username}", status_code=200, response_model=AdminGetUserResponse)
+@router.get("/{user_id}", status_code=200, response_model=AdminGetUserResponse)
 @inject
-async def get_user_by_name_for_admin(
+async def get_user_by_id_for_admin(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
-    user_name: str,
+    user_id: str,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
 
     # 관리자 권한 확인
     assert_admin(current_user)
 
-    existsing_user = await user_service.get_user_by_name(user_name)
+    existsing_user = await user_service.get_user_by_id(user_id)
     return AdminGetUserResponse.from_domain(existsing_user)
 
 
 # admin/ 수정
-@router.patch("/{user_name}", status_code=200, response_model=AdminUpdateUserResponse)
+@router.patch("/{user_id}", status_code=200, response_model=AdminUpdateUserResponse)
 @inject
 async def update_user_by_admin(
-    user_name: str,
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    user_id: str,
     body: AdminUpdateUserBody,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ) -> AdminUpdateUserResponse:
 
     assert_admin(current_user)
 
-    user = await user_service.get_user_by_name(user_name)
-
     updated_user = await user_service.update_user(
-        user_id=user.id,
+        user_id=user_id,
         name=body.name,
         password=body.password,
         role=body.role,
@@ -87,16 +85,14 @@ async def update_user_by_admin(
     return AdminUpdateUserResponse.from_domain(updated_user)
 
 
-@router.delete("/{user_name}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}", status_code=204)
 @inject
 async def delete_user_by_admin(
-    user_name: str,
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    user_id: str,
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
 
     assert_admin(current_user)
 
-    user = await user_service.get_user_by_name(user_name)
-
-    await user_service.delete_user(user.id)
+    await user_service.delete_user(user_id)
