@@ -139,3 +139,27 @@ class SummaryRepository(ISummaryRepository):
             for summary_model in summary_models
         ]
         return total_count, summaries
+
+    async def find_all_summaries_for_admin(
+        self,
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Summary]]:
+        """관리자용 모든 요약 조회"""
+        query = select(SummaryModel).order_by(SummaryModel.created_at.desc())
+
+        count_query = select(func.count()).select_from(query.subquery())
+        total_count = await self.session.scalar(count_query)
+
+        offset = (page - 1) * items_per_page
+        paged = query.limit(items_per_page).offset(offset)
+        result = await self.session.execute(paged)
+        summary_models = result.scalars().all()
+
+        summaries = [self._map_model_to_entity(model) for model in summary_models]
+        return total_count, summaries
+
+    async def count_all_summaries(self) -> int:
+        """전체 요약 수 조회"""
+        query = select(func.count()).select_from(SummaryModel)
+        return await self.session.scalar(query)

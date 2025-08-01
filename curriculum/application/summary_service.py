@@ -163,3 +163,41 @@ class SummaryService:
             items_per_page=items_per_page,
         )
         return total_count, summaries
+
+    async def get_all_summaries_for_admin(
+        self,
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Summary]]:
+        """관리자용 모든 요약 조회"""
+
+        total_count, summaries = await self.summary_repo.find_all_summaries_for_admin(
+            page=page,
+            items_per_page=items_per_page,
+        )
+        return total_count, summaries
+
+    async def get_summary_for_admin(
+        self,
+        summary_id: str,
+    ) -> Tuple[Summary, Optional[Feedback]]:
+        """관리자용 요약 상세 조회 (권한 체크 없음)"""
+
+        summary = await self.summary_repo.find_by_id(summary_id)
+        if not summary:
+            raise SummaryNotFoundError(f"Summary {summary_id} not found")
+
+        feedback = await self.feedback_repo.find_by_summary_id(summary_id)
+        return summary, feedback
+
+    async def delete_summary_for_admin(
+        self,
+        summary_id: str,
+    ) -> None:
+        """관리자용 요약 삭제 (권한 체크 없음)"""
+
+        summary = await self.summary_repo.find_by_id(summary_id)
+        if not summary:
+            raise SummaryNotFoundError(f"Summary {summary_id} not found")
+
+        await self.summary_repo.delete(summary_id)

@@ -34,3 +34,15 @@ class ISummaryRepository(metaclass=ABCMeta):
         items_per_page: int,
     ) -> Tuple[int, List[Summary]]:
         raise NotImplementedError
+
+    @abstractmethod
+    async def find_all_summaries_for_admin(
+        self,
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Summary]]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def count_all_summaries(self) -> int:
+        raise NotImplementedError
