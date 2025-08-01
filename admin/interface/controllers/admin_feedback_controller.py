@@ -60,10 +60,4 @@ async def delete_feedback_by_admin(
     """관리자가 피드백 삭제"""
     assert_admin(current_user)
 
-    await feedback_service.delete_feedback(
-        owner_id="",  # Admin은 소유자 체크 안함
-        role=current_user.role,
-        curriculum_id="",  # 필요시 조회해서 채우기
-        summary_id="",  # 필요시 조회해서 채우기
-        feedback_id=feedback_id,
-    )
+    await feedback_service.delete_feedback_by_admin(feedback_id)
