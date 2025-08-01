@@ -58,6 +58,7 @@ async def summary_not_found_handler(
         return JSONResponse(
             status_code=409, content={"detail": "해당 요약본을 찾을 수 없습니다."}
         )
+    raise exc
 
 
 async def feedback_not_found_handler(
@@ -68,6 +69,7 @@ async def feedback_not_found_handler(
         return JSONResponse(
             status_code=409, content={"detail": "해당 피드백을 찾을 수 없습니다."}
         )
+    raise exc
 
 
 async def curriculum_count_over_handler(
@@ -81,6 +83,7 @@ async def curriculum_count_over_handler(
                 "detail": "커리큘럼이 10개가 넘었습니다. 하나를 지우고 생성사세요."
             },
         )
+    raise exc
 
 
 async def week_schedule_not_found_handler(
@@ -92,6 +95,7 @@ async def week_schedule_not_found_handler(
             status_code=400,
             content={"detail": "해당 주차를 찾을 수 없습니다."},
         )
+    raise exc
 
 
 async def week_index_out_of_range_handler(
@@ -103,6 +107,7 @@ async def week_index_out_of_range_handler(
             status_code=400,
             content={"detail": "주차는 최대의 5개의 lessons을 가질 수 있습니다."},
         )
+    raise exc
 
 
 async def feedback_already_exist_handler(
@@ -114,6 +119,7 @@ async def feedback_already_exist_handler(
             status_code=400,
             content={"detail": "해당 피드백은 이미 존재합니다."},
         )
+    raise exc
 
 
 async def comment_not_found_handler(
@@ -125,6 +131,7 @@ async def comment_not_found_handler(
             status_code=400,
             content={"detail": "해당 댓글을 찾을 수 없습니다."},
         )
+    raise exc
 
 
 async def comment_permisson_handler(
@@ -136,6 +143,7 @@ async def comment_permisson_handler(
             status_code=400,
             content={"detail": "댓글에 대한 권한이 없습니다."},
         )
+    raise exc
 
 
 # register
