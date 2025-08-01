@@ -27,6 +27,7 @@ dependencies = [
     "python-multipart (>=0.0.20,<0.0.21)",
     "aiohttp (>=3.12.14,<4.0.0)",
     "py-ulid (>=1.0.3,<2.0.0)",
+    "prometheus-client (>=0.22.1,<0.23.0)",
 ]
 
 

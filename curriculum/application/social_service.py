@@ -9,6 +9,7 @@ from curriculum.domain.repository.like_repo import ILikeRepository
 from curriculum.domain.repository.bookmark_repo import IBookmarkRepository
 from curriculum.domain.repository.curriculum_repo import ICurriculumRepository
 from user.domain.value_object.role import RoleVO
+from monitoring.metrics import increment_like, increment_bookmark
 
 
 class SocialService:
@@ -63,6 +64,8 @@ class SocialService:
             )
             await self.like_repo.create(new_like)
             is_liked = True
+
+        increment_like()
 
         # 현재 좋아요 수 조회
         like_count = await self.like_repo.count_by_curriculum(curriculum_id)
@@ -148,6 +151,7 @@ class SocialService:
             )
             await self.bookmark_repo.create(new_bookmark)
             is_bookmarked = True
+        increment_bookmark()
 
         return {
             "is_bookmarked": is_bookmarked,

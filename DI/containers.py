@@ -36,6 +36,7 @@ class Container(containers.DeclarativeContainer):
             "user.interface.controllers",
             "curriculum.interface.controllers",
             "admin.interface.controllers",
+            "monitoring",
         ]
     )
 

@@ -15,6 +15,7 @@ from curriculum.domain.value_object.feedback_comment import FeedbackComment
 from curriculum.domain.value_object.feedback_score import FeedbackScore
 from curriculum.infra.llm.I_llm_client_repo import ILLMClientRepository
 from user.domain.value_object.role import RoleVO
+from monitoring.metrics import increment_feedback_created
 
 
 class FeedbackService:
@@ -80,6 +81,9 @@ class FeedbackService:
             updated_at=now,
         )
         await self.feedback_repo.create(feedback)
+
+        increment_feedback_created()
+
         return feedback
 
     async def get_feedback(

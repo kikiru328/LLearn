@@ -12,6 +12,7 @@ from user.domain.value_object.password import Password
 from user.domain.value_object.password_validator import PasswordValidator
 from user.domain.value_object.role import RoleVO
 from utils.crypto import Crypto
+from monitoring.metrics import increment_user_registration, increment_user_login
 
 
 class AuthService:
@@ -60,6 +61,9 @@ class AuthService:
         )
 
         await self.user_repo.save(user)
+
+        increment_user_registration()
+
         return user
 
     async def login(
@@ -83,4 +87,7 @@ class AuthService:
             )
 
         access_token = create_access_token(subject=user.id, role=Role(user.role))
+
+        increment_user_login()
+
         return access_token, user.role
