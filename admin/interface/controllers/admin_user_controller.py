@@ -4,7 +4,7 @@ from dependency_injector.wiring import inject, Provide
 
 from common.auth import CurrentUser, get_current_user, Role
 
-from admin.interface.schemas.admin_schema import (
+from admin.interface.schemas.admin_user_schema import (
     AdminGetUserResponse,
     AdminGetUsersPageResponse,
     AdminUpdateUserResponse,
@@ -15,7 +15,7 @@ from DI.containers import Container
 from user.application.user_service import UserService
 
 
-router = APIRouter(prefix="/admins", tags=["admins"])
+router = APIRouter(prefix="/admins/users", tags=["admins/users"])
 
 
 def assert_admin(current_user: CurrentUser) -> None:

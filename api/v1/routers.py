@@ -11,12 +11,18 @@ from curriculum.interface.controllers.summary_controller import (
 from curriculum.interface.controllers.feedback_controller import (
     router as feedback_router,
 )
-from admin.interface.controllers.admin_controller import router as admin_router
+from admin.interface.controllers.admin_user_controller import (
+    router as admin_user_router,
+)
+from admin.interface.controllers.admin_curriculum_controller import (
+    router as admin_curriculum_controller,
+)
 
 v1_router = APIRouter(prefix="/api/v1")
 
 v1_router.include_router(auth_router)
-v1_router.include_router(admin_router)
+v1_router.include_router(admin_user_router)
+v1_router.include_router(admin_curriculum_controller)
 v1_router.include_router(user_router)
 v1_router.include_router(curriculum_router)
 v1_router.include_router(user_summary_router)
