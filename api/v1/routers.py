@@ -15,22 +15,26 @@ from admin.interface.controllers.admin_user_controller import (
     router as admin_user_router,
 )
 from admin.interface.controllers.admin_curriculum_controller import (
-    router as admin_curriculum_controller,
+    router as admin_curriculum_router,
 )
 from admin.interface.controllers.admin_summary_controller import (
-    router as admin_summary_controller,
+    router as admin_summary_router,
 )
 from admin.interface.controllers.admin_feedback_controller import (
-    router as admin_feedback_controller,
+    router as admin_feedback_router,
+)
+from admin.interface.controllers.admin_stats_controller import (
+    router as admin_stats_router,
 )
 
 v1_router = APIRouter(prefix="/api/v1")
 
 v1_router.include_router(auth_router)
 v1_router.include_router(admin_user_router)
-v1_router.include_router(admin_curriculum_controller)
-v1_router.include_router(admin_summary_controller)
-v1_router.include_router(admin_feedback_controller)
+v1_router.include_router(admin_curriculum_router)
+v1_router.include_router(admin_summary_router)
+v1_router.include_router(admin_feedback_router)
+v1_router.include_router(admin_stats_router)
 v1_router.include_router(user_router)
 v1_router.include_router(curriculum_router)
 v1_router.include_router(user_summary_router)

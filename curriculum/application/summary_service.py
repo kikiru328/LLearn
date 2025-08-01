@@ -201,3 +201,7 @@ class SummaryService:
             raise SummaryNotFoundError(f"Summary {summary_id} not found")
 
         await self.summary_repo.delete(summary_id)
+
+    async def get_total_summaries_count(self) -> int:
+        """전체 요약 수 조회 (Admin용)"""
+        return await self.summary_repo.count_all_summaries()
