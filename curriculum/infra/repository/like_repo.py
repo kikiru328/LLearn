@@ -1,7 +1,6 @@
 from typing import Optional, List, Tuple
 from sqlalchemy import func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from curriculum.domain.entity.like import Like
 from curriculum.domain.repository.like_repo import ILikeRepository
