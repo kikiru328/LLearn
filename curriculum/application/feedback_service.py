@@ -162,3 +162,7 @@ class FeedbackService:
         """전체 피드백 수 조회"""
 
         return await self.feedback_repo.count_all()
+
+    async def delete_feedback_by_admin(self, feedback_id: str) -> None:
+        """관리자용 피드백 삭제 (권한 체크 없음)"""
+        await self.feedback_repo.delete(feedback_id)
