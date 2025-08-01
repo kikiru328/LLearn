@@ -1,86 +1,140 @@
-from datetime import datetime
+from enum import StrEnum
+from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
-from typing import Annotated, List
+
+from curriculum.domain.entity.curriculum import Curriculum
 
 
-# ─── 재사용 Body ───
+class VisibilityEnum(StrEnum):
+    PUBLIC = "PUBLIC"
+    PRIVATE = "PRIVATE"
 
 
-class WeekScheduleBody(BaseModel):
-    week_number: int = Field(..., gt=0, description="주차 번호")
-    topics: Annotated[
-        List[str],
-        Field(..., min_items=1, description="주차별 학습 주제 목록"),
-    ]
+class WeekScheduleItem(BaseModel):
+    week_number: int = Field(ge=1, description="주차 번호 (1~)")
+    lessons: List[str] = Field(min_items=1, description="해당 주차의 학습 목록")
 
 
-class SummaryBody(BaseModel):
-    week_number: int = Field(..., gt=0, description="주차 번호")
-    content: str = Field(..., min_length=1, max_length=1000, description="요약 내용")
-
-
-class FeedbackBody(BaseModel):
-    summary_id: str = Field(..., description="요약 ID")
-    comment: str = Field(..., min_length=1, max_length=500, description="피드백 댓글")
-    score: int = Field(..., ge=0, le=10, description="피드백 점수")
-
-
-# ─── Request Models ───
-
-
-class CurriculumGenerateRequest(BaseModel):
-    topic: str = Field(..., description="학습 주제")
-    duration_weeks: int = Field(
-        ...,
-        ge=1,
-        le=24,
-        description="학습 기간(주 단위, 1~24주)",
+class CreateCurriculumRequest(BaseModel):
+    title: str = Field(min_length=2, max_length=50, description="커리큘럼 제목")
+    week_schedules: List[WeekScheduleItem] = Field(
+        description="주차별 학습 스케쥴 목록"
+    )
+    visibility: VisibilityEnum = Field(
+        default=VisibilityEnum.PRIVATE,
+        description="커리큘럼 공개 여부 (Public or Private)",
     )
 
 
-class CurriculumUpdateRequest(BaseModel):
-    topic: str = Field(..., description="새 커리큘럼 제목")
-
-
-class SummaryRequest(BaseModel):
-    week_number: int = Field(..., ge=1, description="주차 번호")
-    content: str = Field(..., min_length=1, max_length=1000, description="요약 내용")
-
-
-class FeedbackRequest(BaseModel):
-    summary_id: str = Field(..., description="요약 ID")
-    comment: str = Field(..., min_length=1, max_length=500, description="피드백 댓글")
-    score: int = Field(..., ge=0, le=10, description="피드백 점수")
-
-
-# ─── Response Models ───
-
-
-class CurriculumResponse(BaseModel):
+class CreateCurriculumResponse(BaseModel):
     id: str
-    owner_id: str
-    topic: str
-    duration_weeks: int
-    week_schedules: List[WeekScheduleBody]
-    created_at: datetime
-    updated_at: datetime
+    title: str
+    visibility: VisibilityEnum
+    week_schedules: List[WeekScheduleItem]
+
+    @classmethod
+    def from_domain(cls, curriculum: Curriculum) -> "CreateCurriculumResponse":
+        week_items = [
+            WeekScheduleItem(
+                week_number=ws.week_number.value,
+                lessons=ws.lessons.items,
+            )
+            for ws in curriculum.week_schedules
+        ]
+        return cls(
+            id=str(curriculum.id),
+            title=str(curriculum.title),
+            visibility=VisibilityEnum(curriculum.visibility.value),
+            week_schedules=week_items,
+        )
 
 
-class SummaryResponse(BaseModel):
+class UpdateCurriculumRequest(BaseModel):
+    title: str | None = None
+    visibility: VisibilityEnum = Field(
+        default=VisibilityEnum.PRIVATE,
+        description="커리큘럼 공개 여부 (Public or Private)",
+    )
+
+
+class GetCurriculumDetailResponse(BaseModel):
     id: str
-    content: str
-    submitted_at: datetime
+    owner_name: str
+    title: str
+    week_schedules: List[WeekScheduleItem]
+    visibility: VisibilityEnum
+
+    @classmethod
+    def from_domain(cls, curriculum: Curriculum) -> "GetCurriculumDetailResponse":
+        week_schedule_items = [
+            WeekScheduleItem(
+                week_number=week_schedule.week_number.value,
+                lessons=week_schedule.lessons.items,
+            )
+            for week_schedule in curriculum.week_schedules
+        ]
+        return cls(
+            id=str(curriculum.id),
+            owner_name=curriculum.owner_name,
+            title=str(curriculum.title),
+            week_schedules=week_schedule_items,
+            visibility=VisibilityEnum(curriculum.visibility.value),
+        )
 
 
-class FeedbackResponse(BaseModel):
+class GetCurriculumBriefResponse(BaseModel):
     id: str
-    comment: str
-    score: int
-    created_at: datetime
+    title: str
+    owner_name: str
+    visibility: VisibilityEnum
 
 
-class PaginatedCurriculumsResponse(BaseModel):
+class GetCurriculumsPageResponse(BaseModel):
     total_count: int
-    page: int
-    items_per_page: int
-    curriculums: List[CurriculumResponse]
+    curriculums: List[GetCurriculumBriefResponse]
+
+    @classmethod
+    def from_domain(
+        cls,
+        total_count: int,
+        curriculums: List[Curriculum],
+    ) -> "GetCurriculumsPageResponse":
+        briefs = []
+        for curriculum in curriculums:
+            briefs.append(
+                GetCurriculumBriefResponse(
+                    id=str(curriculum.id),
+                    title=str(curriculum.title),
+                    owner_name=curriculum.owner_name,
+                    visibility=VisibilityEnum(curriculum.visibility.value),
+                )
+            )
+        return cls(
+            total_count=total_count,
+            curriculums=briefs,
+        )
+
+
+class CreateWeekScheduleRequest(BaseModel):
+    week_number: int = Field(ge=1, description="삽입 할 주차 번호")
+    lessons: List[str] = Field(min_items=1, description="해당 주차에 추가할 학습 목록")
+
+
+class CreateLessonRequest(BaseModel):
+    lesson: str
+    index: Optional[int] = Field(
+        None, ge=0, description="삽입할 위치 (0부터). 미지정 시 마지막에 추가"
+    )
+
+
+class UpdateLessonsRequest(BaseModel):
+    lesson: str
+
+
+class GenerateCurriculumRequest(BaseModel):
+    goal: str = Field(min_length=5, description="학습 목표")
+    period: int = Field(ge=1, le=24, description="학습기간 (주 단위, 1~24주)")
+    difficulty: Literal["beginner", "intermediate", "expert"] = Field(
+        description="난이도 초급, 중급, 고급"
+    )
+    details: str = Field(description="세부 요청 사항")

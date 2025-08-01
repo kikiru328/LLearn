@@ -1,30 +1,36 @@
 from abc import ABCMeta, abstractmethod
-from typing import List
+from typing import List, Optional, Tuple
 from curriculum.domain.entity.summary import Summary
-from curriculum.domain.value_object.week_number import WeekNumber
 
 
 class ISummaryRepository(metaclass=ABCMeta):
     @abstractmethod
-    async def save(
-        self,
-        curriculum_id: str,
-        week_number: WeekNumber,
-        summary: Summary,
-    ) -> None:
+    async def create(self, summary: Summary) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def find_by_week(
+    async def find_all_by_curriculum_and_week(
         self,
         curriculum_id: str,
-        week_number: WeekNumber,
-    ) -> List[Summary]:
+        week_number: int,
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Summary]]:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(
+    async def find_by_id(self, id: str) -> Optional[Summary]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def delete(self, id: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def find_all_by_user(
         self,
-        summary_id: str,
-    ) -> None:
+        owner_id: str,
+        page: int,
+        items_per_page: int,
+    ) -> Tuple[int, List[Summary]]:
         raise NotImplementedError

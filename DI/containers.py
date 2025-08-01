@@ -1,8 +1,11 @@
 from dependency_injector import containers, providers
 
 from config import get_settings
+
 from curriculum.application.curriculum_service import CurriculumService
-from curriculum.external.llm_client import RealLLMClient
+from curriculum.application.feedback_service import FeedbackService
+from curriculum.application.summary_service import SummaryService
+from curriculum.infra.llm.openai_client import OpenAILLMClient
 from curriculum.infra.repository.curriculum_repo import CurriculumRepository
 from curriculum.infra.repository.feedback_repo import FeedbackRepository
 from curriculum.infra.repository.summary_repo import SummaryRepository
@@ -29,6 +32,14 @@ class Container(containers.DeclarativeContainer):
 
     db_session = providers.Factory(AsyncSessionLocal)
 
+    # LLM
+    llm_client = providers.Singleton(
+        OpenAILLMClient,
+        api_key=config.provided.llm_api_key,
+        endpoint=config.provided.llm_endpoint,
+    )
+
+    # User
     user_repository = providers.Factory(
         UserRepository,
         session=db_session,
@@ -48,30 +59,46 @@ class Container(containers.DeclarativeContainer):
         crypto=providers.Singleton(Crypto),
     )
 
+    # Curriculum
     curriculum_repository = providers.Factory(
         CurriculumRepository,
         session=db_session,
-    )
-    summary_repository = providers.Factory(
-        SummaryRepository,
-        session=db_session,
-    )
-    feedback_repository = providers.Factory(
-        FeedbackRepository,
-        session=db_session,
-    )
-
-    # LLMClient 인터페이스 ↔ 구현체 매핑
-    llm_client = providers.Singleton(
-        RealLLMClient,
-        api_key=config.provided.llm_api_key,
-        endpoint=config.provided.llm_endpoint,  # implement
     )
 
     curriculum_service = providers.Factory(
         CurriculumService,
         curriculum_repo=curriculum_repository,
-        summary_repo=summary_repository,
-        feedback_repo=feedback_repository,
         llm_client=llm_client,
+        ulid=providers.Singleton(ULID),
+    )
+
+    # Summary
+
+    summary_repository = providers.Factory(
+        SummaryRepository,
+        session=db_session,
+    )
+
+    feedback_repository = providers.Factory(
+        FeedbackRepository,
+        session=db_session,
+    )
+
+    summary_service = providers.Factory(
+        SummaryService,
+        summary_repo=summary_repository,
+        curriculum_repo=curriculum_repository,
+        feedback_repo=feedback_repository,
+        ulid=providers.Singleton(ULID),
+    )
+
+    # Feedback
+
+    feedback_service = providers.Factory(
+        FeedbackService,
+        feedback_repo=feedback_repository,
+        summary_repo=summary_repository,
+        curriculum_repo=curriculum_repository,
+        llm_client=llm_client,
+        ulid=providers.Singleton(ULID),
     )

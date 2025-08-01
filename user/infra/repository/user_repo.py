@@ -7,7 +7,7 @@ from user.domain.repository.user_repo import IUserRepository
 from user.domain.value_object.name import Name
 from user.domain.value_object.password import Password
 from user.domain.value_object.role import RoleVO
-from user.infra.db_models.user import User as UserModel
+from user.infra.db_models.user import UserModel
 
 from user.domain.value_object.email import Email
 

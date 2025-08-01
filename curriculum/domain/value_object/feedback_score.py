@@ -1,34 +1,39 @@
 class FeedbackScore:
+    """
+    LLM이 평가한 학습 점수를 표현하는 VO.
+    0.0 이상 10.0 이하의 숫자만 허용합니다.
+    """
+
     __slots__ = ("_value",)
 
-    MIN_SCORE = 1
-    MAX_SCORE = 10
+    MIN_SCORE = 0.0
+    MAX_SCORE = 10.0
 
-    def __init__(self, raw: int) -> None:
-        if not isinstance(raw, int):
-            raise ValueError(
-                f"Feedback score must be an integer, got {type(raw).__name__}"
+    def __init__(self, raw: int | float) -> None:
+        if not isinstance(raw, (int, float)):
+            raise TypeError(
+                f"FeedbackScore must be int or float, got {type(raw).__name__}"
             )
-
-        if not (self.MIN_SCORE <= raw <= self.MAX_SCORE):
+        value = float(raw)
+        if not (self.MIN_SCORE <= value <= self.MAX_SCORE):
             raise ValueError(
-                f"Feedback score must be between {self.MIN_SCORE} and {self.MAX_SCORE}, got {raw}"
+                f"FeedbackScore must be between {self.MIN_SCORE} and {self.MAX_SCORE}, got {value}"
             )
-
-        self._value = raw
+        self._value = value
 
     @property
-    def value(self) -> int:
+    def value(self) -> float:
         return self._value
 
     def __str__(self) -> str:
+        # 예: "7.5/10"
         return f"{self._value}/10"
-
-    def __repr__(self) -> str:
-        return f"<FeedbackScore {self._value}>"
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, FeedbackScore) and self._value == other._value
 
     def __hash__(self) -> int:
         return hash(self._value)
+
+    def __repr__(self) -> str:
+        return f"<FeedbackScore {self._value}>"
