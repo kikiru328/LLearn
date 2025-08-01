@@ -35,9 +35,7 @@ async def get_summaries_for_admin(
     assert_admin(current_user)
 
     # 모든 사용자의 요약을 조회하기 위해 새로운 서비스 메서드 필요
-    # 임시로 빈 owner_id로 처리 (추후 SummaryService에 admin용 메서드 추가 필요)
     total_count, summaries = await summary_service.get_all_summaries_for_admin(
-        # owner_id="",  # Admin용으로 수정 필요
         page=page,
         items_per_page=items_per_page,
     )

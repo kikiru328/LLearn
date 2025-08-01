@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional, Tuple
 from ulid import ULID
 from archive.application.exception import CurriculumNotFoundError
 from curriculum.application.exception import (
@@ -136,3 +136,29 @@ class FeedbackService:
             raise PermissionError("피드백 삭제 권한이 없습니다")
 
         await self.feedback_repo.delete(feedback_id)
+
+    async def get_all_feedbacks_for_admin(
+        self,
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Feedback]]:
+        """관리자용 모든 피드백 조회"""
+
+        total_count, feedbacks = await self.feedback_repo.find_all_feedbacks_for_admin(
+            page=page,
+            items_per_page=items_per_page,
+        )
+        return total_count, feedbacks
+
+    async def delete_feedback_for_admin(
+        self,
+        feedback_id: str,
+    ) -> None:
+        """관리자용 피드백 삭제 (권한 체크 없음)"""
+
+        await self.feedback_repo.delete(feedback_id)
+
+    async def get_total_feedbacks_count(self) -> int:
+        """전체 피드백 수 조회"""
+
+        return await self.feedback_repo.count_all()

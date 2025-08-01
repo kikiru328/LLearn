@@ -1,5 +1,5 @@
-from typing import Optional
-from sqlalchemy import select
+from typing import List, Optional, Tuple
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from curriculum.domain.entity.feedback import Feedback
 from curriculum.domain.repository.feedback_repo import IFeedbackRepository
@@ -56,3 +56,37 @@ class FeedbackRepository(IFeedbackRepository):
         except:
             await self.session.rollback()
             raise
+
+    async def find_all_feedbacks_for_admin(
+        self,
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Feedback]]:
+        """관리자용 모든 피드백 조회"""
+        query = select(FeedbackModel).order_by(FeedbackModel.created_at.desc())
+
+        count_query = select(func.count()).select_from(query.subquery())
+        total_count = await self.session.scalar(count_query)
+
+        offset = (page - 1) * items_per_page
+        paged = query.limit(items_per_page).offset(offset)
+        result = await self.session.execute(paged)
+        feedback_models = result.scalars().all()
+
+        feedbacks = [
+            Feedback(
+                id=model.id,
+                summary_id=model.summary_id,
+                comment=FeedbackComment(model.comment),
+                score=FeedbackScore(model.score),
+                created_at=model.created_at,
+                updated_at=model.updated_at,
+            )
+            for model in feedback_models
+        ]
+        return total_count, feedbacks
+
+    async def count_all(self) -> int:
+        """전체 피드백 수 조회"""
+        query = select(func.count()).select_from(FeedbackModel)
+        return await self.session.scalar(query)
