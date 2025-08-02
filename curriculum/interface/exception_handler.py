@@ -3,12 +3,16 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from curriculum.application.exception import (
+    CategoryNotFoundError,
     CommentNotFoundError,
     CommentPermissionError,
     CurriculumNotFoundError,
+    DuplicateCategoryError,
+    DuplicateTagError,
     FeedbackNotFoundError,
     SummaryNotFoundError,
     CurriculumCountOverError,
+    TagNotFoundError,
     WeekScheduleNotFoundError,
     WeekIndexOutOfRangeError,
     FeedbackAlreadyExistsError,
@@ -146,6 +150,54 @@ async def comment_permisson_handler(
     raise exc
 
 
+async def tag_not_found_handler(
+    request: Request,
+    exc: Exception,
+):
+    if isinstance(exc, TagNotFoundError):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "해당 태그를 찾을 수 없습니다."},
+        )
+    raise exc
+
+
+async def category_not_found_handler(
+    request: Request,
+    exc: Exception,
+):
+    if isinstance(exc, CategoryNotFoundError):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "해당 카테고리를 찾을 수 없습니다."},
+        )
+    raise exc
+
+
+async def duplicate_tag_handler(
+    request: Request,
+    exc: Exception,
+):
+    if isinstance(exc, DuplicateTagError):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "해당 태그는 이미 존재합니다."},
+        )
+    raise exc
+
+
+async def duplicate_category_handler(
+    request: Request,
+    exc: Exception,
+):
+    if isinstance(exc, DuplicateCategoryError):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "해당 카테고리는 이미 존재합니다."},
+        )
+    raise exc
+
+
 # register
 def curriculum_exceptions_handlers(app: FastAPI):
     # pydantic
@@ -166,3 +218,7 @@ def curriculum_exceptions_handlers(app: FastAPI):
     )
     app.add_exception_handler(CommentNotFoundError, comment_not_found_handler)
     app.add_exception_handler(CommentPermissionError, comment_permisson_handler)
+    app.add_exception_handler(TagNotFoundError, tag_not_found_handler)
+    app.add_exception_handler(CategoryNotFoundError, category_not_found_handler)
+    app.add_exception_handler(DuplicateTagError, duplicate_tag_handler)
+    app.add_exception_handler(DuplicateCategoryError, duplicate_category_handler)

@@ -27,6 +27,9 @@ RUN poetry install --no-root
 # 전체 소스 복사
 COPY . .
 
+COPY startup.sh /workspace/startup.sh
+RUN chmod +x /workspace/startup.sh
+
 EXPOSE 8000
 
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
