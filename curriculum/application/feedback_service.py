@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 from ulid import ULID
-from archive.application.exception import CurriculumNotFoundError
+from curriculum.application.exception import CurriculumNotFoundError
 from curriculum.application.exception import (
     FeedbackAlreadyExistsError,
     FeedbackNotFoundError,
