@@ -1,6 +1,9 @@
 from fastapi import APIRouter
+
 from user.interface.controllers.auth_controller import router as auth_router
+
 from user.interface.controllers.user_controller import router as user_router
+
 from curriculum.interface.controllers.curriculum_controller import (
     router as curriculum_router,
 )
@@ -11,15 +14,21 @@ from curriculum.interface.controllers.summary_controller import (
 from curriculum.interface.controllers.feedback_controller import (
     router as feedback_router,
 )
-
 from curriculum.interface.controllers.social_controller import (
     router as curriculum_social_router,
     user_social_router as user_social_router,
 )
-
 from curriculum.interface.controllers.comment_controller import (
     router as curriculum_comment_router,
     user_comment_router,
+)
+from curriculum.interface.controllers.tag_controller import (
+    router as tag_router,
+    curriculum_tags_router,
+)
+from curriculum.interface.controllers.category_controller import (
+    router as category_router,
+    curriculum_categories_router,
 )
 
 
@@ -46,12 +55,6 @@ from admin.interface.controllers.admin_bulk_controller import (
 v1_router = APIRouter(prefix="/api/v1")
 
 v1_router.include_router(auth_router)
-v1_router.include_router(admin_user_router)
-v1_router.include_router(admin_curriculum_router)
-v1_router.include_router(admin_summary_router)
-v1_router.include_router(admin_feedback_router)
-v1_router.include_router(admin_stats_router)
-v1_router.include_router(admin_bulk_router)
 
 v1_router.include_router(user_router)
 v1_router.include_router(curriculum_social_router)
@@ -63,3 +66,14 @@ v1_router.include_router(curriculum_router)
 v1_router.include_router(user_summary_router)
 v1_router.include_router(summary_router)
 v1_router.include_router(feedback_router)
+v1_router.include_router(tag_router)
+v1_router.include_router(curriculum_tags_router)
+v1_router.include_router(category_router)
+v1_router.include_router(curriculum_categories_router)
+
+v1_router.include_router(admin_user_router)
+v1_router.include_router(admin_curriculum_router)
+v1_router.include_router(admin_summary_router)
+v1_router.include_router(admin_feedback_router)
+v1_router.include_router(admin_stats_router)
+v1_router.include_router(admin_bulk_router)

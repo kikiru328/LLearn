@@ -1,55 +1,51 @@
-class TagName:
-    """
-    태그 이름을 표현하는 VO.
-    1자 이상 20자 이하, 영문/한글/숫자만 허용 (공백 불허)
-    """
+from dataclasses import dataclass
+from datetime import datetime
 
-    __slots__ = ("_value",)
+from curriculum.domain.value_object.tag_name import TagName
 
-    MIN_LENGTH = 1
-    MAX_LENGTH = 20
 
-    def __init__(self, raw: str) -> None:
-        if not isinstance(raw, str):
-            raise ValueError(f"TagName must be a string, got {type(raw).__name__}")
+@dataclass
+class Tag:
+    id: str
+    name: TagName
+    usage_count: int  # 태그가 사용된 횟수
+    created_by: str  # 태그를 처음 만든 사용자 ID
+    created_at: datetime
+    updated_at: datetime
 
-        cleaned = raw.strip().lower()  # 소문자로 정규화
-        if not cleaned:
-            raise ValueError("태그 이름은 공백일 수 없습니다")
-
-        length = len(cleaned)
-        if length < self.MIN_LENGTH:
-            raise ValueError(f"태그 이름은 최소 {self.MIN_LENGTH}자 이상이어야 합니다")
-        if length > self.MAX_LENGTH:
-            raise ValueError(f"태그 이름은 최대 {self.MAX_LENGTH}자 이하이어야 합니다")
-
-        # 허용되는 문자 검사 (영문, 한글, 숫자만, 공백 불허)
-        import re
-
-        if not re.match(r"^[a-zA-Z0-9가-힣]+$", cleaned):
-            raise ValueError(
-                "태그 이름은 영문, 한글, 숫자만 사용할 수 있습니다 (공백 불허)"
+    def __post_init__(self):
+        if not isinstance(self.id, str):
+            raise TypeError(f"id must be str, got {type(self.id).__name__}")
+        if not isinstance(self.name, TagName):
+            raise TypeError(f"name must be TagName, got {type(self.name).__name__}")
+        if not isinstance(self.usage_count, int):
+            raise TypeError(
+                f"usage_count must be int, got {type(self.usage_count).__name__}"
+            )
+        if not isinstance(self.created_by, str):
+            raise TypeError(
+                f"created_by must be str, got {type(self.created_by).__name__}"
+            )
+        if not isinstance(self.created_at, datetime):
+            raise TypeError(
+                f"created_at must be datetime, got {type(self.created_at).__name__}"
+            )
+        if not isinstance(self.updated_at, datetime):
+            raise TypeError(
+                f"updated_at must be datetime, got {type(self.updated_at).__name__}"
             )
 
-        self._value = cleaned
+    def increment_usage(self):
+        """태그 사용 횟수 증가"""
+        self.usage_count += 1
+        self.updated_at = datetime.now()
 
-    @property
-    def value(self) -> str:
-        return self._value
+    def decrement_usage(self):
+        """태그 사용 횟수 감소"""
+        if self.usage_count > 0:
+            self.usage_count -= 1
+            self.updated_at = datetime.now()
 
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, TagName) and self._value == other._value
-
-    def __hash__(self) -> int:
-        return hash(self._value)
-
-    def __repr__(self) -> str:
-        return f"<TagName {self._value!r}>"
-
-    def __str__(self) -> str:
-        return self._value
-
-    @classmethod
-    def from_list(cls, tag_names: list[str]) -> list["TagName"]:
-        """문자열 리스트에서 TagName 리스트 생성"""
-        return [cls(name) for name in tag_names if name.strip()]
+    def is_popular(self, threshold: int = 10) -> bool:
+        """인기 태그인지 확인"""
+        return self.usage_count >= threshold

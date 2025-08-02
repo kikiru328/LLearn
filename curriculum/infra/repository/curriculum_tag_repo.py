@@ -1,8 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, List, Tuple
-from sqlalchemy import func, select, delete, update
+from sqlalchemy import func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload
 
 from curriculum.domain.entity.curriculum_tag import CurriculumTag, CurriculumCategory
 from curriculum.domain.entity.tag import Tag
