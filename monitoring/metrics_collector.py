@@ -15,9 +15,8 @@ from monitoring.metrics import (
     update_total_counts,
     app_start_time,
     app_info,
-    db_connections_active,
 )
-from common.auth import Role
+
 from user.domain.value_object.role import RoleVO
 
 logger = logging.getLogger(__name__)

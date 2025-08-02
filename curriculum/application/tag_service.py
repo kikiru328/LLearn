@@ -10,7 +10,7 @@ from curriculum.application.exception import (
 )
 from curriculum.domain.entity.category import Category
 from curriculum.domain.entity.tag import Tag
-from curriculum.domain.entity.curriculum_tag import CurriculumTag, CurriculumCategory
+from curriculum.domain.entity.curriculum_tag import CurriculumTag
 from curriculum.domain.repository.category_repo import ICategoryRepository
 from curriculum.domain.repository.tag_repo import ITagRepository
 from curriculum.domain.repository.curriculum_tag_repo import (
