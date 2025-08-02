@@ -9,6 +9,7 @@ WORKDIR /workspace
 RUN apt-get update && apt-get install -y \
     build-essential \
     default-libmysqlclient-dev \
+    default-mysql-client \
     pkg-config \
     curl \
     && apt-get clean \
@@ -25,11 +26,11 @@ COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-root
 
 # 전체 소스 복사
+
 COPY . .
 
-COPY startup.sh /workspace/startup.sh
 RUN chmod +x /workspace/startup.sh
+COPY startup.sh /workspace/startup.sh
 
 EXPOSE 8000
-
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "/workspace/startup.sh"]
