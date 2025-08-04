@@ -16,7 +16,7 @@ class Container(containers.DeclarativeContainer):
     # setting
     wiring_config = containers.WiringConfiguration(
         packages=[
-            "user.interface.controller",
+            "app.modules.user.interface.controller",
         ]
     )
 
