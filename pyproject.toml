@@ -39,5 +39,6 @@ build-backend = "poetry.core.masonry.api"
 pytest = "^8.4.1"
 black = "^25.1.0"
 faker = "^37.4.2"
-sqlalchemy2-stubs = "^0.0.2a38"
+freezegun = "^1.5.4"
+pytest-mock = "^3.14.1"
 
