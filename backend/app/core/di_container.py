@@ -1,6 +1,7 @@
 from dependency_injector import containers, providers
 
-from config import get_settings
+from app.modules.user.domain.service.user_domain_service import UserDomainService
+from app.core.config import get_settings
 
 from app.common.db.database import AsyncSessionLocal
 from app.modules.user.application.service.auth_service import AuthService
@@ -15,7 +16,7 @@ class Container(containers.DeclarativeContainer):
     # setting
     wiring_config = containers.WiringConfiguration(
         packages=[
-            "user.interface.controllers",
+            "user.interface.controller",
         ]
     )
 
@@ -29,9 +30,17 @@ class Container(containers.DeclarativeContainer):
         session=db_session,
     )
 
+    # User Domain Service
+    user_domain_service = providers.Factory(
+        UserDomainService,
+        user_repo=user_repository,
+    )
+
+    # User Application Services
     user_service = providers.Factory(
         UserService,
         user_repo=user_repository,
+        user_domain_service=user_domain_service,
         ulid=providers.Singleton(ULID),
         crypto=providers.Singleton(Crypto),
     )
@@ -39,6 +48,7 @@ class Container(containers.DeclarativeContainer):
     auth_service = providers.Factory(
         AuthService,
         user_repo=user_repository,
+        user_domain_service=user_domain_service,
         ulid=providers.Singleton(ULID),
         crypto=providers.Singleton(Crypto),
     )

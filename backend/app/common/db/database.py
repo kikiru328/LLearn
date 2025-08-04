@@ -4,7 +4,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 # from sqlalchemy.orm import sessionmaker
 from app.core.config import Settings
-from core.config import get_settings
+from app.core.config import get_settings
 
 
 settings: Settings = get_settings()

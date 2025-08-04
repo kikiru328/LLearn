@@ -8,7 +8,7 @@ class Name:
     MIN_LENGTH = 2
     MAX_LENGTH = 32
 
-    _NAME_RE: re.Pattern[str] = re.compile(r"^[A-Za-z0-9\uAC00-\uD7A3]+$")
+    _NAME_RE: re.Pattern[str] = re.compile(r"^[A-Za-z0-9\uAC00-\uD7A3 ]+$")
 
     def __init__(self, raw: str) -> None:
 

@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from ulid import ULID  # type: ignore
 from app.core.auth import Role, create_access_token
-from utils.crypto import Crypto
+from app.utils.crypto import Crypto
 
 # from app.common.monitoring.metrics import increment_user_registration
 from app.modules.user.application.exception import (

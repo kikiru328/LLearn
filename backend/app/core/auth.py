@@ -5,7 +5,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from config import get_settings
+from app.core.config import get_settings
 from jose import JWTError, jwt
 
 settings = get_settings()
