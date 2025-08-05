@@ -24,12 +24,12 @@ class User:
     def update_password(self, new_password: Password, updated_at: datetime) -> None:
         """change user's password"""
         self.password = new_password
-        self.update_at: datetime = updated_at
+        self.update_at: datetime = updated_at  # type: ignore
 
     def update_role(self, new_role: RoleVO, updated_at: datetime) -> None:
         """change user's role"""
         self.role = new_role
-        self.updated_at: datetime = updated_at
+        self.updated_at: datetime = updated_at  # type: ignore
 
     def is_admin(self) -> bool:
         """Check authorization of ADMIN"""

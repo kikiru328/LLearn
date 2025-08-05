@@ -1,5 +1,6 @@
 from dependency_injector import containers, providers
 
+from app.common.llm.openai_client import OpenAILLMClient
 from app.modules.user.domain.service.user_domain_service import UserDomainService
 from app.core.config import get_settings
 
@@ -51,4 +52,9 @@ class Container(containers.DeclarativeContainer):
         user_domain_service=user_domain_service,
         ulid=providers.Singleton(ULID),
         crypto=providers.Singleton(Crypto),
+    )
+
+    llm_client = providers.Singleton(
+        OpenAILLMClient,
+        api_key=config.provided.llm_api_key,
     )
