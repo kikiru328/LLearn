@@ -16,7 +16,7 @@ class Curriculum:
     visibility: Visibility
     created_at: datetime
     updated_at: datetime
-    week_schedules: List[WeekSchedule] = field(default_factory=list)
+    week_schedules: List[WeekSchedule] = field(default_factory=list)  # type: ignore
 
     def __post_init__(self):
         """생성 후 유효성 검사"""
@@ -73,8 +73,11 @@ class Curriculum:
             raise ValueError(f"Week {week_schedule.week_number.value} already exists")
 
         # 최대 주차 제한 (24주)
-        if len(self.week_schedules) >= 24:
-            raise ValueError("Cannot add more than 24 weeks")
+        if week_schedule.week_number.value > WeekNumber.MAX_WEEK:
+            raise ValueError(f"Cannot add more than {WeekNumber.MAX_WEEK} weeks")
+
+        if len(self.week_schedules) >= WeekNumber.MAX_WEEK:
+            raise ValueError(f"Cannot add more than {WeekNumber.MAX_WEEK} weeks")
 
         self.week_schedules.append(week_schedule)
         self.week_schedules.sort(
