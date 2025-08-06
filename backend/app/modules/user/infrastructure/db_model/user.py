@@ -1,9 +1,15 @@
 from datetime import datetime
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import DateTime, String
 from app.common.db.database import Base
 from app.modules.user.domain.vo.role import RoleVO
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.modules.curriculum.infrastructure.db_model.curriculum import (
+        CurriculumModel,
+    )
 
 
 class UserModel(Base):
@@ -18,3 +24,10 @@ class UserModel(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    curricula: Mapped[list["CurriculumModel"]] = relationship(
+        "CurriculumModel",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )

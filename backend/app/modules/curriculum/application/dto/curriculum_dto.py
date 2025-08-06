@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from app.modules.curriculum.domain.entity.curriculum import Curriculum
 from app.modules.curriculum.domain.entity.week_schedule import WeekSchedule
+from app.modules.curriculum.domain.vo.difficulty import Difficulty
 from app.modules.curriculum.domain.vo.visibility import Visibility
 
 
@@ -24,7 +25,7 @@ class GenerateCurriculumCommand:
     owner_id: str
     goal: str
     period: int
-    difficulty: str
+    difficulty: Difficulty
     details: str
 
     def __post_init__(self):
@@ -33,9 +34,14 @@ class GenerateCurriculumCommand:
             raise ValueError("Goal cannot be empty")
         if not (1 <= self.period <= 24):
             raise ValueError("Period weeks must be between 1 and 24")
-        if self.difficulty not in ["beginner", "intermediate", "expert"]:
+        try:
+            # 이미 Difficulty 타입이면 그대로, 문자열이면 enum으로 변환
+            if not isinstance(self.difficulty, Difficulty):
+                self.difficulty = Difficulty(self.difficulty)  # ValueError 가능
+        except ValueError:
             raise ValueError(
-                "Difficulty must be one of: beginner, intermediate, expert"
+                "Difficulty must be one of: "
+                + f"{', '.join([d.value for d in Difficulty])}"
             )
 
 
@@ -47,7 +53,6 @@ class UpdateCurriculumCommand:
     owner_id: str
     title: Optional[str] = None
     visibility: Optional[Visibility] = None
-
 
 @dataclass
 class CreateWeekScheduleCommand:

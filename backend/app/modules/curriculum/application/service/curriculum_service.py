@@ -142,7 +142,7 @@ class CurriculumService:
                 "You can only have to 10 curriculums. Delete one before creating a new one"
             )
 
-        curriculum: Curriculum = self.curriculum_domain_service.create_curriculum(
+        curriculum: Curriculum = await self.curriculum_domain_service.create_curriculum(
             curriculum_id=self.ulid.generate(),
             owner_id=command.owner_id,
             title=command.title,
@@ -181,7 +181,7 @@ class CurriculumService:
         except Exception as e:
             raise LLMGenerationError(f"Failed to generate curriculum: {str(e)}")
 
-        curriculum: Curriculum = self.curriculum_domain_service.create_curriculum(
+        curriculum: Curriculum = await self.curriculum_domain_service.create_curriculum(
             curriculum_id=self.ulid.generate(),
             owner_id=command.owner_id,
             title=curriculum_data["title"],
@@ -195,7 +195,7 @@ class CurriculumService:
     async def get_curriculums(
         self,
         query: CurriculumQuery,
-        role: RoleVO,
+        # role: RoleVO,
     ) -> CurriculumPageDTO:
 
         if query.owner_id:
@@ -306,7 +306,7 @@ class CurriculumService:
         if role != RoleVO.ADMIN and curriculum.owner_id != command.owner_id:
             raise PermissionError("You can only modify your own curriculum")
 
-        updated_curriculum = self.curriculum_domain_service.insert_week_and_shift(
+        updated_curriculum = await self.curriculum_domain_service.insert_week_and_shift(
             curriculum=curriculum,
             new_week_number=command.week_number,
             lessons_data=command.lessons,
@@ -339,7 +339,7 @@ class CurriculumService:
             raise WeekScheduleNotFoundError(f"Week {week_number} not found")
 
         # 도메인 서비스를 통한 주차 제거
-        updated_curriculum = self.curriculum_domain_service.remove_week_and_shift(
+        updated_curriculum = await self.curriculum_domain_service.remove_week_and_shift(
             curriculum=curriculum,
             target_week_number=week_number,
         )

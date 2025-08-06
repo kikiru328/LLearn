@@ -28,7 +28,7 @@ class UserRepository(IUserRepository):
         )
 
     async def save(self, user: UserDomain) -> None:
-        new_user = UserModel(
+        new_user = UserModel(  # type: ignore
             id=user.id,
             email=str(user.email),
             name=str(user.name),

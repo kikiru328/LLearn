@@ -1,6 +1,15 @@
 from dependency_injector import containers, providers
 
 from app.common.llm.openai_client import OpenAILLMClient
+from app.modules.curriculum.application.service.curriculum_service import (
+    CurriculumService,
+)
+from app.modules.curriculum.domain.service.curriculum_domain_service import (
+    CurriculumDomainService,
+)
+from app.modules.curriculum.infrastructure.repository.curriculum_repo import (
+    CurriculumRepository,
+)
 from app.modules.user.domain.service.user_domain_service import UserDomainService
 from app.core.config import get_settings
 
@@ -18,6 +27,7 @@ class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(
         packages=[
             "app.modules.user.interface.controller",
+            "app.modules.curriculum.interface.controller",
         ]
     )
 
@@ -31,13 +41,11 @@ class Container(containers.DeclarativeContainer):
         session=db_session,
     )
 
-    # User Domain Service
     user_domain_service = providers.Factory(
         UserDomainService,
         user_repo=user_repository,
     )
 
-    # User Application Services
     user_service = providers.Factory(
         UserService,
         user_repo=user_repository,
@@ -46,6 +54,7 @@ class Container(containers.DeclarativeContainer):
         crypto=providers.Singleton(Crypto),
     )
 
+    # Auth
     auth_service = providers.Factory(
         AuthService,
         user_repo=user_repository,
@@ -54,7 +63,26 @@ class Container(containers.DeclarativeContainer):
         crypto=providers.Singleton(Crypto),
     )
 
+    # LLM
     llm_client = providers.Singleton(
         OpenAILLMClient,
         api_key=config.provided.llm_api_key,
+    )
+
+    # Curriculum
+    curriculum_repository = providers.Factory(
+        CurriculumRepository,
+        session=db_session,
+    )
+
+    curriculum_domain_service = providers.Factory(
+        CurriculumDomainService,
+        curriculum_repo=curriculum_repository,
+    )
+    curriculum_service = providers.Factory(
+        CurriculumService,
+        curriculum_repo=curriculum_repository,
+        curriculum_domain_service=curriculum_domain_service,
+        llm_client=llm_client,
+        ulid=providers.Singleton(ULID),
     )

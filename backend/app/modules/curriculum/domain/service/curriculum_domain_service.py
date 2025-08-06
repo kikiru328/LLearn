@@ -3,12 +3,19 @@ from typing import List, Optional
 
 from app.modules.curriculum.domain.entity.curriculum import Curriculum
 from app.modules.curriculum.domain.entity.week_schedule import WeekSchedule
+from app.modules.curriculum.domain.repository.curriculum_repo import (
+    ICurriculumRepository,
+)
 from app.modules.curriculum.domain.vo import Title, Visibility, Lessons, WeekNumber
 
 
 class CurriculumDomainService:
-    @staticmethod
-    def create_curriculum(
+
+    def __init__(self, curriculum_repo: ICurriculumRepository) -> None:
+        self.curriculum_repo: ICurriculumRepository = curriculum_repo
+
+    async def create_curriculum(
+        self,
         curriculum_id: str,
         owner_id: str,
         title: str,
@@ -39,9 +46,11 @@ class CurriculumDomainService:
             week_schedules=week_schedules,
         )
 
-    @staticmethod
-    def insert_week_and_shift(
-        curriculum: Curriculum, new_week_number: int, lessons_data: List[str]
+    async def insert_week_and_shift(
+        self,
+        curriculum: Curriculum,
+        new_week_number: int,
+        lessons_data: List[str],
     ) -> Curriculum:
         """새 주차 삽입 및 기존 주차들 뒤로 밀기"""
         new_week = WeekNumber(new_week_number)
@@ -92,9 +101,10 @@ class CurriculumDomainService:
             week_schedules=updated_week_schedules,
         )
 
-    @staticmethod
-    def remove_week_and_shift(
-        curriculum: Curriculum, target_week_number: int
+    async def remove_week_and_shift(
+        self,
+        curriculum: Curriculum,
+        target_week_number: int,
     ) -> Curriculum:
         """주차 제거 및 이후 주차들 앞으로 당기기"""
         target_week = WeekNumber(target_week_number)
@@ -130,8 +140,10 @@ class CurriculumDomainService:
             week_schedules=updated_week_schedules,
         )
 
-    @staticmethod
-    def validate_curriculum_structure(curriculum: Curriculum) -> bool:
+    async def validate_curriculum_structure(
+        self,
+        curriculum: Curriculum,
+    ) -> bool:
         """커리큘럼 구조 유효성 검증"""
         # 빈 커리큘럼 허용하지 않음
         if curriculum.is_empty():
@@ -149,9 +161,11 @@ class CurriculumDomainService:
 
         return True
 
-    @staticmethod
-    def can_access_curriculum(
-        curriculum: Curriculum, user_id: str, is_admin: bool = False
+    async def can_access_curriculum(
+        self,
+        curriculum: Curriculum,
+        user_id: str,
+        is_admin: bool = False,
     ) -> bool:
         """커리큘럼 접근 권한 검증"""
         # 관리자는 모든 커리큘럼 접근 가능

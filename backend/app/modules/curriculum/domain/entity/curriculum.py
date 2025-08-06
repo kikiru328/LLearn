@@ -101,6 +101,10 @@ class Curriculum:
 
     def get_week_schedule(self, week_number: WeekNumber) -> Optional[WeekSchedule]:
         """특정 주차 주제 조회"""
+        print(f"Looking for week: {week_number.value}")
+        print(
+            f"Available weeks: {[ws.week_number.value for ws in self.week_schedules]}"
+        )
         for week_schedule in self.week_schedules:
             if week_schedule.week_number == week_number:
                 return week_schedule
