@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from app.modules.learning.domain.entity.summary import Summary
 from app.modules.learning.domain.entity.feedback import Feedback
@@ -165,3 +165,31 @@ class FeedbackPageDTO:
             items_per_page=items_per_page,
             feedbacks=[FeedbackDTO.from_domain(f) for f in feedbacks],
         )
+
+
+@dataclass
+class CurriculumStatsDTO:
+    """커리큘럼 통계 전송 객체"""
+
+    curriculum_id: str
+    total_weeks: int
+    completed_summaries: int
+    received_feedbacks: int
+    completion_rate: float
+    feedback_rate: float
+    average_score: Optional[float]
+    score_distribution: Dict[str, int]
+    weekly_progress: Dict[str, Dict]
+
+
+@dataclass
+class UserStatsDTO:
+    """사용자 통계 전송 객체"""
+
+    user_id: str
+    total_summaries: int
+    total_feedbacks: int
+    average_score: Optional[float]
+    recent_activity: Dict
+    grade_distribution: Dict[str, int]
+    learning_pattern: Dict

@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
 from typing import List, Optional, Tuple
 
 from app.modules.learning.domain.entity.feedback import Feedback
@@ -86,4 +87,25 @@ class IFeedbackRepository(metaclass=ABCMeta):
     @abstractmethod
     async def exists_by_summary_id(self, summary_id: str) -> bool:
         """요약에 대한 피드백 존재 여부 확인"""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def count_by_user_since(self, owner_id: str, since_date: datetime) -> int:
+        """특정 날짜 이후 사용자의 피드백 개수 조회"""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def find_by_user_since(
+        self,
+        owner_id: str,
+        since_date: datetime,
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Feedback]]:
+        """특정 날짜 이후 사용자의 피드백 목록 조회"""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_grade_distribution_by_user(self, owner_id: str) -> dict:
+        """사용자의 등급별 피드백 분포 조회"""
         raise NotImplementedError

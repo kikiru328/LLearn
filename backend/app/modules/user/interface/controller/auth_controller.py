@@ -12,10 +12,10 @@ from app.modules.user.interface.schema.auth_schema import (
 )
 
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/signup", response_model=SignUpResponse)
+@auth_router.post("/signup", response_model=SignUpResponse)
 @inject
 async def signup(
     body: SignUpBody,
@@ -30,7 +30,7 @@ async def signup(
     return SignUpResponse.from_dto(user_dto)
 
 
-@router.post("/login", response_model=TokenResponse)
+@auth_router.post("/login", response_model=TokenResponse)
 @inject
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],

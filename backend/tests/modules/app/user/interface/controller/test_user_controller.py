@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from fastapi import FastAPI, status
 from datetime import datetime, timezone
 
-from app.modules.user.interface.controller.user_controller import router
+from app.modules.user.interface.controller.user_controller import user_router as router
 from app.modules.user.application.service.user_service import UserService
 from app.modules.user.application.dto.user_dto import UserDTO, UsersPageDTO
 from app.modules.user.application.exception import UserNotFoundError, ExistNameError

@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from app.modules.curriculum.infrastructure.db_model.week_schedule import (
         WeekScheduleModel,
     )
+    from app.modules.learning.infrastructure.db_model.summary import SummaryModel
 
 
 class CurriculumModel(Base):
@@ -37,6 +38,13 @@ class CurriculumModel(Base):
 
     week_schedules: Mapped[list["WeekScheduleModel"]] = relationship(
         "WeekScheduleModel",
+        back_populates="curriculum",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    summaries: Mapped[list["SummaryModel"]] = relationship(
+        "SummaryModel",
         back_populates="curriculum",
         cascade="all, delete-orphan",
         passive_deletes=True,

@@ -8,7 +8,7 @@ from app.common.llm.prompts.curriculum import CURRICULUM_GENERATION_PROMPT
 from app.common.llm.prompts.feedback import FEEDBACK_GENERATION_PROMPT
 from app.core.config import Settings, get_settings
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class OpenAILLMClient(ILLMClientRepository):
@@ -26,6 +26,7 @@ class OpenAILLMClient(ILLMClientRepository):
         prompt: str,
         role_content: str,
         max_tokens: int = 1200,
+        timeout: float | None = 10.0,
     ) -> str:
         """OpenAI API 요청"""
         payload: Dict[str, Any] = {
@@ -49,7 +50,9 @@ class OpenAILLMClient(ILLMClientRepository):
             "Content-Type": "application/json",
         }
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=timeout)
+        ) as session:
             async with session.post(
                 self.endpoint, json=payload, headers=headers
             ) as response:
@@ -99,13 +102,18 @@ class OpenAILLMClient(ILLMClientRepository):
         )
 
         response_text = await self._make_request(
-            prompt=prompt, role_content=role_content
+            prompt=prompt,
+            role_content=role_content,
+            timeout=None,
         )
         return self._parse_json_response(response_text)
 
     async def generate_feedback(
-        self, lessons: List[str], summary_content: str
+        self,
+        lessons: List[str],
+        summary_content: str,
     ) -> Dict[str, Any]:
+
         prompt = FEEDBACK_GENERATION_PROMPT.format(
             lessons=", ".join(lessons), summary=summary_content
         )
@@ -117,6 +125,8 @@ class OpenAILLMClient(ILLMClientRepository):
             "and `score` (float 0–10). No other keys or markdown."
         )
         response_text = await self._make_request(
-            prompt=prompt, role_content=role_content
+            prompt=prompt,
+            role_content=role_content,
+            timeout=10.0,
         )
         return self._parse_json_response(response_text)

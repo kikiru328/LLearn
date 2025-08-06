@@ -13,10 +13,10 @@ from app.modules.user.interface.schema.user_schema import (
 )
 
 
-router = APIRouter(prefix="/users", tags=["users"])
+user_router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.get("/me", response_model=GetUserResponse)
+@user_router.get("/me", response_model=GetUserResponse)
 @inject
 async def get_me(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -27,7 +27,7 @@ async def get_me(
     return GetUserResponse.from_dto(user_dto)
 
 
-@router.put("/me", response_model=UpdateUserResponse)
+@user_router.put("/me", response_model=UpdateUserResponse)
 @inject
 async def update_me(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -44,7 +44,7 @@ async def update_me(
     return UpdateUserResponse.from_dto(user_dto)
 
 
-@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+@user_router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 @inject
 async def delete_me(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -54,7 +54,7 @@ async def delete_me(
     await user_service.delete_user(current_user.id)
 
 
-@router.get("", response_model=GetUsersPageResponse)
+@user_router.get("", response_model=GetUsersPageResponse)
 @inject
 async def get_users_for_social(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -68,7 +68,7 @@ async def get_users_for_social(
     return GetUsersPageResponse.from_dto(users_page_dto)
 
 
-@router.get("/{user_name}", response_model=GetUserResponse)
+@user_router.get("/{user_name}", response_model=GetUserResponse)
 @inject
 async def get_user_by_name(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],

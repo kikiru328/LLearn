@@ -10,6 +10,7 @@ from app.modules.curriculum.domain.service.curriculum_domain_service import (
 from app.modules.curriculum.infrastructure.repository.curriculum_repo import (
     CurriculumRepository,
 )
+from app.modules.learning.core.di_container import LearningContainer
 from app.modules.user.domain.service.user_domain_service import UserDomainService
 from app.core.config import get_settings
 
@@ -28,6 +29,7 @@ class Container(containers.DeclarativeContainer):
         packages=[
             "app.modules.user.interface.controller",
             "app.modules.curriculum.interface.controller",
+            "app.modules.learning.interface.controller",
         ]
     )
 
@@ -86,3 +88,15 @@ class Container(containers.DeclarativeContainer):
         llm_client=llm_client,
         ulid=providers.Singleton(ULID),
     )
+    # Learning
+
+    learning_container = providers.Container(
+        LearningContainer,
+        session=db_session,
+        curriculum_repository=curriculum_repository,
+        llm_client=llm_client,
+    )
+    summary_service = learning_container.summary_service
+    summary_repository = learning_container.summary_repository
+    feedback_service = learning_container.feedback_service
+    feedback_repository = learning_container.feedback_repository
