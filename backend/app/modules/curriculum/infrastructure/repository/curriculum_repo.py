@@ -106,6 +106,7 @@ class CurriculumRepository(ICurriculumRepository):
         total_count: int = await self.count_by_owner(owner_id=owner_id)
         query: Select[Tuple[CurriculumModel]] = (
             select(CurriculumModel)
+            .where(CurriculumModel.user_id == owner_id)
             .options(selectinload(CurriculumModel.week_schedules))
             .order_by(CurriculumModel.created_at.desc())
             .offset((page - 1) * items_per_page)

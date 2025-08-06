@@ -54,6 +54,7 @@ class UpdateCurriculumCommand:
     title: Optional[str] = None
     visibility: Optional[Visibility] = None
 
+
 @dataclass
 class CreateWeekScheduleCommand:
     """주차 생성 명령"""
@@ -103,6 +104,7 @@ class CurriculumQuery:
     owner_id: Optional[str] = None
     page: int = 1
     items_per_page: int = 10
+    visibility: Optional[Visibility] = None
 
 
 @dataclass

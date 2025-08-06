@@ -57,7 +57,7 @@ class TestSummaryContent:
     def test_non_string_type(self):
         """문자열이 아닌 타입 테스트"""
         with pytest.raises(ValueError, match="SummaryContent must be a string"):
-            SummaryContent(123)
+            SummaryContent(123)  # type: ignore
 
     def test_equality(self):
         """동등성 비교 테스트"""

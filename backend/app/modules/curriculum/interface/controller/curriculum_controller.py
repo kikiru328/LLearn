@@ -68,24 +68,40 @@ async def generate_curriculum(
     return CurriculumResponse.from_dto(generated)
 
 
-@curriculum_router.get("/", response_model=CurriculumsPageResponse)
+@curriculum_router.get("/me", response_model=CurriculumsPageResponse)
 @inject
-async def get_list_curriculums(
+async def get_list_my_curriculums(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
     page: int = Query(1, ge=1),
     items_per_page: int = Query(10, ge=1, le=100),
-    public: bool = Query(False),
     curriculum_service: CurriculumService = Depends(
         Provide[Container.curriculum_service]
     ),
 ) -> CurriculumsPageResponse:
-    if public:
-        query = CurriculumQuery(owner_id=None, page=page, items_per_page=items_per_page)
-    else:
-        owner_id = current_user.id if current_user else None
-        query = CurriculumQuery(
-            owner_id=owner_id, page=page, items_per_page=items_per_page
-        )
+    query = CurriculumQuery(
+        owner_id=current_user.id,
+        page=page,
+        items_per_page=items_per_page,
+    )
+    page_dto: CurriculumPageDTO = await curriculum_service.get_curriculums(query=query)
+    return CurriculumsPageResponse.from_dto(page_dto)
+
+
+@curriculum_router.get("/public", response_model=CurriculumsPageResponse)
+@inject
+async def get_list_public_curriculums(
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    page: int = Query(1, ge=1),
+    items_per_page: int = Query(10, ge=1, le=100),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
+) -> CurriculumsPageResponse:
+    query = CurriculumQuery(
+        owner_id=None,
+        page=page,
+        items_per_page=items_per_page,
+    )
     page_dto: CurriculumPageDTO = await curriculum_service.get_curriculums(query=query)
     return CurriculumsPageResponse.from_dto(page_dto)
 

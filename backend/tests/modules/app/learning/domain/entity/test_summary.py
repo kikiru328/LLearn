@@ -34,7 +34,7 @@ class TestSummary:
         """잘못된 ID 타입 테스트"""
         with pytest.raises(TypeError, match="id must be a non-empty string"):
             Summary(
-                id=123,  # 숫자
+                id=123,  # type: ignore # 숫자
                 curriculum_id="01HGP123456789",
                 week_number=WeekNumber(1),
                 content=SummaryContent("a" * 100),
@@ -60,7 +60,7 @@ class TestSummary:
             Summary(
                 id="01HGQ123456789",
                 curriculum_id="01HGP123456789",
-                week_number=1,  # WeekNumber가 아닌 int
+                week_number=1,  # type: ignore # WeekNumber가 아닌 int
                 content=SummaryContent("a" * 100),
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc),
@@ -73,7 +73,7 @@ class TestSummary:
                 id="01HGQ123456789",
                 curriculum_id="01HGP123456789",
                 week_number=WeekNumber(1),
-                content="일반 문자열",  # SummaryContent가 아님
+                content="일반 문자열",  # type: ignore # SummaryContent가 아님
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc),
             )

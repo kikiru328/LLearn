@@ -45,7 +45,7 @@ class TestFeedbackScore:
     def test_invalid_type(self):
         """잘못된 타입 테스트"""
         with pytest.raises(TypeError, match="FeedbackScore must be int or float"):
-            FeedbackScore("7.5")
+            FeedbackScore("7.5")  # type: ignore
 
     def test_string_representation(self):
         """문자열 표현 테스트"""

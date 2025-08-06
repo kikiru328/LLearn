@@ -35,7 +35,7 @@ class TestFeedback:
             Feedback(
                 id="01HGR123456789",
                 summary_id="01HGQ123456789",
-                comment="일반 문자열",  # FeedbackComment가 아님
+                comment="일반 문자열",  # type: ignore # FeedbackComment가 아님
                 score=FeedbackScore(8.5),
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc),
@@ -48,7 +48,7 @@ class TestFeedback:
                 id="01HGR123456789",
                 summary_id="01HGQ123456789",
                 comment=FeedbackComment("좋은 요약"),
-                score=8.5,  # FeedbackScore가 아님
+                score=8.5,  # type: ignore # FeedbackScore가 아님
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc),
             )
@@ -103,8 +103,8 @@ class TestFeedback:
             updated_at=datetime.now(timezone.utc),
         )
 
-        assert good_feedback.is_good_score() == True
-        assert poor_feedback.is_good_score() == False
+        assert good_feedback.is_good_score() == True  # type: ignore  # noqa: E712
+        assert poor_feedback.is_good_score() == False  # type: ignore  # noqa: E712
 
     def test_is_poor_score(self):
         """낮은 점수 판별 테스트"""
@@ -126,8 +126,8 @@ class TestFeedback:
             updated_at=datetime.now(timezone.utc),
         )
 
-        assert poor_feedback.is_poor_score() == True
-        assert good_feedback.is_poor_score() == False
+        assert poor_feedback.is_poor_score() == True  # noqa: E712
+        assert good_feedback.is_poor_score() == False  # noqa: E712
 
     @pytest.mark.parametrize(
         "score,expected_grade",

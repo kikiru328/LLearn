@@ -219,7 +219,7 @@ class TestCurriculumController:
         )
 
         # When
-        response = client.get("/api/v1/curriculums/?page=1&items_per_page=10")
+        response = client.get("/api/v1/curriculums/me?page=1&items_per_page=10")
 
         # Then
         assert response.status_code == status.HTTP_200_OK
@@ -241,7 +241,7 @@ class TestCurriculumController:
         )
 
         # When
-        response = client.get("/api/v1/curriculums/?public=true")
+        response = client.get("/api/v1/curriculums/public?public=true")
 
         # Then
         assert response.status_code == status.HTTP_200_OK
@@ -687,7 +687,8 @@ class TestAuthenticationRequired:
         endpoints = [
             ("POST", "/api/v1/curriculums"),
             ("POST", "/api/v1/curriculums/generate"),
-            ("GET", "/api/v1/curriculums/"),
+            ("GET", "/api/v1/curriculums/me"),
+            ("GET", "/api/v1/curriculums/public"),
             ("GET", "/api/v1/curriculums/test_id"),
             ("PATCH", "/api/v1/curriculums/test_id"),
             ("DELETE", "/api/v1/curriculums/test_id"),

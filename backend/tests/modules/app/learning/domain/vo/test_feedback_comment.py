@@ -30,7 +30,7 @@ class TestFeedbackComment:
     def test_non_string_type(self):
         """문자열이 아닌 타입 테스트"""
         with pytest.raises(TypeError, match="FeedbackComment must be a string"):
-            FeedbackComment(123)
+            FeedbackComment(123)  # type: ignore
 
     def test_equality(self):
         """동등성 비교 테스트"""
