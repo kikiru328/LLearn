@@ -4,13 +4,27 @@ from app.common.llm.openai_client import OpenAILLMClient
 from app.modules.curriculum.application.service.curriculum_service import (
     CurriculumService,
 )
+
 from app.modules.curriculum.domain.service.curriculum_domain_service import (
     CurriculumDomainService,
 )
 from app.modules.curriculum.infrastructure.repository.curriculum_repo import (
     CurriculumRepository,
 )
+
 from app.modules.learning.core.di_container import LearningContainer
+from app.modules.taxonomy.application.service.category_service import CategoryService
+from app.modules.taxonomy.application.service.curriculum_tag_service import (
+    CurriculumTagService,
+)
+from app.modules.taxonomy.application.service.tag_service import TagService
+from app.modules.taxonomy.infrastructure.repository.category_repo import (
+    CategoryRepository,
+)
+from app.modules.taxonomy.infrastructure.repository.curriculum_tag import (
+    CurriculumTagRepository,
+)
+from app.modules.taxonomy.infrastructure.repository.tag_repo import TagRepository
 from app.modules.user.domain.service.user_domain_service import UserDomainService
 from app.core.config import get_settings
 
@@ -30,6 +44,7 @@ class Container(containers.DeclarativeContainer):
             "app.modules.user.interface.controller",
             "app.modules.curriculum.interface.controller",
             "app.modules.learning.interface.controller",
+            "app.modules.tag.interface.controller",
         ]
     )
 
@@ -100,3 +115,35 @@ class Container(containers.DeclarativeContainer):
     summary_repository = learning_container.summary_repository
     feedback_service = learning_container.feedback_service
     feedback_repository = learning_container.feedback_repository
+
+    # Taxonomy
+
+    tag_repository = providers.Container(
+        TagRepository,
+        session=db_session,
+    )
+
+    tag_service = providers.Container(
+        TagService,
+        tag_repo=tag_repository,
+    )
+
+    category_repository = providers.Container(
+        CategoryRepository,
+        session=db_session,
+    )
+
+    category_service = providers.Container(
+        CategoryService,
+        category_repo=category_repository,
+    )
+
+    curriculum_tag_repository = providers.Container(
+        CurriculumTagRepository,
+        session=db_session,
+    )
+
+    curriculum_tag_service = providers.Container(
+        CurriculumTagService,
+        curriculum_tag_repo=curriculum_tag_repository,
+    )
