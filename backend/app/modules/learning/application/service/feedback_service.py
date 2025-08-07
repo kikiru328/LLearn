@@ -71,7 +71,7 @@ class FeedbackService:
         # 접근 권한 확인
         can_access: bool = await self.learning_domain_service.can_access_summary(
             summary=summary,
-            user_id=command.owner_id,
+            owner_id=command.owner_id,
             role=role,
         )
 
@@ -110,7 +110,7 @@ class FeedbackService:
         # 접근 권한 확인
         can_access: bool = await self.learning_domain_service.can_access_summary(
             summary=summary,
-            user_id=user_id,
+            owner_id=user_id,
             role=role,
         )
 

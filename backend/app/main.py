@@ -1,26 +1,26 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.api.v1.router import v1_router
 from app.core.di_container import Container
-from app.common.cache.redis_client import redis_client
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 시작 시 Redis 연결
-    await redis_client.connect()
-    yield
-    # 종료 시 Redis 연결 해제
-    await redis_client.disconnect()
+from app.lifespan import combined_lifespan
 
 
 class App(FastAPI):
     container: Container
 
 
-app = App()
+app = App(
+    lifespan=combined_lifespan,
+    title="Curriculum Learning Platform API",
+    description="A comprehensive learning platform with social features",
+    version="1.0.0",
+)
+
 app.container = Container()
 app.include_router(v1_router)
+# app.include_router(monitoring_router)
+# app.middleware(PrometheusMiddleware)
+# app.middleware(HealthCheckMiddleware)
+# exception_handlers(app)
 
 
 @app.get("/")

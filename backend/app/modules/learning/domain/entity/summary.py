@@ -10,6 +10,7 @@ class Summary:
     """학습 요약 Entity"""
 
     id: str
+    owner_id: str
     curriculum_id: str
     week_number: WeekNumber
     content: SummaryContent
@@ -51,6 +52,9 @@ class Summary:
         if len(self.content.value) <= max_length:
             return self.content.value
         return self.content.value[:max_length] + "..."
+
+    def is_owned_by(self, owner_id: str) -> bool:
+        return self.owner_id == owner_id
 
     def __str__(self) -> str:
         return f"Summary(Week {self.week_number.value}): {self.get_content_snippet(50)}"

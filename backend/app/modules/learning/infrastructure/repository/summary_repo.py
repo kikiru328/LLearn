@@ -22,6 +22,7 @@ class SummaryRepository(ISummaryRepository):
             curriculum_id=summary_model.curriculum_id,
             week_number=WeekNumber(summary_model.week_number),
             content=SummaryContent(summary_model.content),
+            owner_id=summary_model.owner_id,
             created_at=summary_model.created_at,
             updated_at=summary_model.updated_at,
         )
@@ -32,6 +33,7 @@ class SummaryRepository(ISummaryRepository):
             curriculum_id=summary.curriculum_id,
             week_number=summary.week_number.value,
             content=summary.content.value,
+            owner_id=summary.owner_id,
             created_at=summary.created_at,
             updated_at=summary.updated_at,
         )

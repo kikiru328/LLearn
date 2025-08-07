@@ -191,7 +191,7 @@ async def find_curriculums_by_category(
 
 
 @curriculum_tag_router.get(
-    "/my-tagged-curriculums",
+    "/tags/my-tagged-curriculums",
     response_model=List[str],
 )
 @inject
@@ -213,7 +213,7 @@ async def get_my_tagged_curriculums(
 
 
 @curriculum_tag_router.get(
-    "/my-categorized-curriculums",
+    "/categories/my-categorized-curriculums",
     response_model=List[str],
 )
 @inject

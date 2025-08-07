@@ -31,6 +31,7 @@ class LearningDomainService:
     async def create_summary(
         self,
         summary_id: str,
+        owner_id: str,
         curriculum_id: str,
         week_number: int,
         content: str,
@@ -41,6 +42,7 @@ class LearningDomainService:
 
         summary = Summary(
             id=summary_id,
+            owner_id=owner_id,
             curriculum_id=curriculum_id,
             week_number=WeekNumber(week_number),
             content=SummaryContent(content),
@@ -75,7 +77,7 @@ class LearningDomainService:
     async def can_access_summary(
         self,
         summary: Summary,
-        user_id: str,
+        owner_id: str,
         role: RoleVO,
     ) -> bool:
         """요약 접근 권한 확인"""
@@ -84,17 +86,18 @@ class LearningDomainService:
             return True
 
         # 커리큘럼 소유자 확인
-        curriculum = await self.curriculum_repo.find_by_id(
-            curriculum_id=summary.curriculum_id,
-            role=role,
-            owner_id=user_id,
-        )
+        # curriculum = await self.curriculum_repo.find_by_id(
+        #     curriculum_id=summary.curriculum_id,
+        #     role=role,
+        #     owner_id=user_id,
+        # )
 
-        if not curriculum:
-            return False
+        # if not curriculum:
+        # return False
 
         # 커리큘럼 소유자이거나 공개 커리큘럼인 경우 접근 가능
-        return curriculum.is_owned_by(user_id) or curriculum.is_public()
+        # return curriculum.is_owned_by(owner_id) or curriculum.is_public()
+        return summary.owner_id == owner_id
 
     async def can_modify_summary(
         self,

@@ -6,15 +6,11 @@ from app.core.auth import CurrentUser, get_current_user
 from app.core.di_container import Container
 from app.modules.learning.application.service.feedback_service import FeedbackService
 from app.modules.learning.application.dto.learning_dto import (
-    CreateFeedbackCommand,
-    UpdateFeedbackCommand,
     FeedbackQuery,
     FeedbackDTO,
     FeedbackPageDTO,
 )
 from app.modules.learning.interface.schema.feedback_schema import (
-    CreateFeedbackRequest,
-    UpdateFeedbackRequest,
     FeedbackResponse,
     FeedbackPageResponse,
     GenerateFeedbackRequest,
@@ -25,30 +21,30 @@ from app.modules.user.domain.vo.role import RoleVO
 feedback_router = APIRouter(prefix="/summaries", tags=["Feedbacks"])
 
 
-@feedback_router.post(
-    "/{summary_id}/feedbacks",
-    response_model=FeedbackResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-@inject
-async def create_feedback(
-    summary_id: str,
-    request: CreateFeedbackRequest,
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
-    feedback_service: FeedbackService = Depends(Provide[Container.feedback_service]),
-) -> FeedbackResponse:
-    """피드백 생성 (수동)"""
-    command: CreateFeedbackCommand = request.to_command(
-        summary_id=summary_id,
-        owner_id=current_user.id,
-    )
+# @feedback_router.post(
+#     "/{summary_id}/feedbacks",
+#     response_model=FeedbackResponse,
+#     status_code=status.HTTP_201_CREATED,
+# )
+# @inject
+# async def create_feedback(
+#     summary_id: str,
+#     request: CreateFeedbackRequest,
+#     current_user: Annotated[CurrentUser, Depends(get_current_user)],
+#     feedback_service: FeedbackService = Depends(Provide[Container.feedback_service]),
+# ) -> FeedbackResponse:
+#     """피드백 생성 (수동)"""
+#     command: CreateFeedbackCommand = request.to_command(
+#         summary_id=summary_id,
+#         owner_id=current_user.id,
+#     )
 
-    dto: FeedbackDTO = await feedback_service.create_feedback(
-        command=command,
-        role=RoleVO(current_user.role.value),
-    )
+#     dto: FeedbackDTO = await feedback_service.create_feedback(
+#         command=command,
+#         role=RoleVO(current_user.role.value),
+#     )
 
-    return FeedbackResponse.from_dto(dto)
+#     return FeedbackResponse.from_dto(dto)
 
 
 @feedback_router.post(
@@ -118,30 +114,30 @@ async def get_feedback_by_id(
     return FeedbackResponse.from_dto(dto)
 
 
-@feedback_router.put(
-    "/feedbacks/{feedback_id}",
-    response_model=FeedbackResponse,
-    status_code=status.HTTP_200_OK,
-)
-@inject
-async def update_feedback(
-    feedback_id: str,
-    request: UpdateFeedbackRequest,
-    current_user: Annotated[CurrentUser, Depends(get_current_user)],
-    feedback_service: FeedbackService = Depends(Provide[Container.feedback_service]),
-) -> FeedbackResponse:
-    """피드백 수정"""
-    command: UpdateFeedbackCommand = request.to_command(
-        feedback_id=feedback_id,
-        owner_id=current_user.id,
-    )
+# @feedback_router.put(
+#     "/feedbacks/{feedback_id}",
+#     response_model=FeedbackResponse,
+#     status_code=status.HTTP_200_OK,
+# )
+# @inject
+# async def update_feedback(
+#     feedback_id: str,
+#     request: UpdateFeedbackRequest,
+#     current_user: Annotated[CurrentUser, Depends(get_current_user)],
+#     feedback_service: FeedbackService = Depends(Provide[Container.feedback_service]),
+# ) -> FeedbackResponse:
+#     """피드백 수정"""
+#     command: UpdateFeedbackCommand = request.to_command(
+#         feedback_id=feedback_id,
+#         owner_id=current_user.id,
+#     )
 
-    dto: FeedbackDTO = await feedback_service.update_feedback(
-        command=command,
-        role=RoleVO(current_user.role.value),
-    )
+#     dto: FeedbackDTO = await feedback_service.update_feedback(
+#         command=command,
+#         role=RoleVO(current_user.role.value),
+#     )
 
-    return FeedbackResponse.from_dto(dto)
+#     return FeedbackResponse.from_dto(dto)
 
 
 @feedback_router.delete(

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from pydantic import BaseModel
 
@@ -27,8 +27,14 @@ class FeedItemResponse(BaseModel):
     @classmethod
     def from_dto(cls, dto: FeedItemDTO) -> "FeedItemResponse":
         # 시간 차이 계산
-        now = datetime.now(dto.updated_at.tzinfo or datetime.now().astimezone().tzinfo)
-        time_diff = now - dto.updated_at
+        now = datetime.now(timezone.utc)
+        if dto.updated_at.tzinfo is None:
+            updated_at = dto.updated_at.replace(tzinfo=timezone.utc)
+        else:
+            # aware하면 UTC로 변환
+            updated_at = dto.updated_at.astimezone(timezone.utc)
+
+        time_diff = now - updated_at
 
         if time_diff.days > 0:
             time_ago = f"{time_diff.days}일 전"

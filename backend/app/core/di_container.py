@@ -1,5 +1,8 @@
 from dependency_injector import containers, providers
 
+# from dependency_injector.wiring import Provide
+from app.common.db.session import get_session
+
 from app.common.llm.openai_client import OpenAILLMClient
 from app.modules.curriculum.application.service.curriculum_service import (
     CurriculumService,
@@ -38,8 +41,6 @@ from app.modules.taxonomy.infrastructure.repository.curriculum_tag import (
 from app.modules.taxonomy.infrastructure.repository.tag_repo import TagRepository
 from app.modules.user.domain.service.user_domain_service import UserDomainService
 from app.core.config import get_settings
-
-from app.common.db.database import AsyncSessionLocal
 from app.modules.user.application.service.auth_service import AuthService
 from app.modules.user.application.service.user_service import UserService
 from app.modules.user.infrastructure.repository.user_repo import UserRepository
@@ -57,12 +58,16 @@ class Container(containers.DeclarativeContainer):
             "app.modules.learning.interface.controller",
             "app.modules.taxonomy.interface.controller",
             "app.modules.social.interface.controller",
+            "app.modules.feed.interface.controller.feed_controller",
         ]
     )
 
     config = providers.Singleton(get_settings)
 
-    db_session = providers.Factory(AsyncSessionLocal)
+    # db_session = providers.Factory(AsyncSessionLocal)
+    db_session = providers.Resource(
+        get_session,
+    )
 
     # User
     user_repository = providers.Factory(
@@ -218,11 +223,6 @@ class Container(containers.DeclarativeContainer):
     like_service = social_container.like_service
     comment_service = social_container.comment_service
     bookmark_service = social_container.bookmark_service
-
-    follow_repository = providers.Factory(
-        FollowRepository,
-        session=db_session,
-    )
 
     follow_domain_service = providers.Factory(
         FollowDomainService,
