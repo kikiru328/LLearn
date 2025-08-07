@@ -46,6 +46,7 @@ class CurriculumService:
         llm_client: ILLMClientRepository,
         follow_repo: IFollowRepository,  # 추가
         ulid: ULID = ULID(),
+        # feed_event_handler: Optional[CurriculumEventHandler] = None,
     ) -> None:
 
         self.curriculum_repo: ICurriculumRepository = curriculum_repo
@@ -55,6 +56,7 @@ class CurriculumService:
         self.llm_client: ILLMClientRepository = llm_client
         self.ulid: ULID = ulid
         self.follow_repo: IFollowRepository = follow_repo  # 추가
+        # self.feed_event_handler = feed_event_handler  # 추가
 
     def _parse_llm_response(self, llm_response: dict, goal: str) -> dict:  # type: ignore
         try:
@@ -155,6 +157,11 @@ class CurriculumService:
         )
 
         await self.curriculum_repo.save(curriculum)
+
+        # if (curriculum.visibility == Visibility.PUBLIC and
+        #     self.feed_event_handler):
+        #     await self.feed_event_handler.on_curriculum_created(curriculum.id)
+
         return CurriculumDTO.from_domain(curriculum)
 
     async def generate_curriculum(
@@ -259,6 +266,10 @@ class CurriculumService:
         if role != RoleVO.ADMIN and curriculum.owner_id != command.owner_id:
             raise PermissionError("You can only update your own curriculum")
 
+        # visibility_changed = (
+        #     command.visibility and curriculum.visibility != command.visibility
+        # )
+
         # 업데이트
         if command.title:
             curriculum.change_title(Title(command.title))
@@ -267,6 +278,13 @@ class CurriculumService:
             curriculum.change_visibility(command.visibility)
 
         await self.curriculum_repo.update(curriculum)
+
+        # if self.feed_event_handler:
+        #     if visibility_changed:
+        #         await self.feed_event_handler.on_curriculum_visibility_changed(curriculum.id)
+        #     else:
+        #         await self.feed_event_handler.on_curriculum_updated(curriculum.id)
+
         return CurriculumDTO.from_domain(curriculum)
 
     async def delete_curriculum(

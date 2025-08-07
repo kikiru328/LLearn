@@ -30,6 +30,8 @@ from app.modules.social.interface.controller.like_controller import like_router
 from app.modules.social.interface.controller.comment_controller import comment_router
 from app.modules.social.interface.controller.bookmark_controller import bookmark_router
 from app.modules.social.interface.controller.social_controller import social_router
+from app.modules.feed.interface.controller.feed_controller import feed_router  # 추가
+
 
 v1_router = APIRouter(prefix="/api/v1")
 v1_router.include_router(auth_router)
@@ -50,3 +52,4 @@ v1_router.include_router(like_router)
 v1_router.include_router(comment_router)
 v1_router.include_router(bookmark_router)
 v1_router.include_router(social_router)
+v1_router.include_router(feed_router)

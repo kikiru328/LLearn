@@ -89,3 +89,15 @@ class FollowAccessDeniedError(Exception):
     """팔로우 접근 권한 없음"""
 
     pass
+
+
+class FeedNotFoundError(Exception):
+    """피드를 찾을 수 없음"""
+
+    pass
+
+
+class FeedCacheError(Exception):
+    """피드 캐시 오류"""
+
+    pass

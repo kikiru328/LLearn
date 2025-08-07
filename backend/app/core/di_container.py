@@ -12,6 +12,7 @@ from app.modules.curriculum.infrastructure.repository.curriculum_repo import (
     CurriculumRepository,
 )
 
+from app.modules.feed.core.di_container import FeedContainer
 from app.modules.learning.application.service.learning_stats_service import (
     LearningStatsService,
 )
@@ -236,3 +237,11 @@ class Container(containers.DeclarativeContainer):
         follow_domain_service=follow_domain_service,
         ulid=providers.Singleton(ULID),
     )
+
+    feed_container = providers.Container(
+        FeedContainer,
+        session=db_session,
+    )
+
+    feed_service = feed_container.feed_service
+    feed_repository = feed_container.feed_repository

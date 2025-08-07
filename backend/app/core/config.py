@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     algorithm: str = ""
     llm_api_key: str = ""
     llm_endpoint: str = ""
+    redis_url: str = ""
 
 
 @lru_cache
