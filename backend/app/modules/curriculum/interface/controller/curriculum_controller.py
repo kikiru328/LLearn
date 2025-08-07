@@ -300,3 +300,24 @@ async def delete_lesson(
     )
 
     await curriculum_service.delete_lesson(dto, RoleVO(current_user.role))
+
+
+@curriculum_router.get("/following", response_model=CurriculumsPageResponse)
+@inject
+async def get_following_users_curriculums(
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+    page: int = Query(1, ge=1),
+    items_per_page: int = Query(10, ge=1, le=100),
+    curriculum_service: CurriculumService = Depends(
+        Provide[Container.curriculum_service]
+    ),
+) -> CurriculumsPageResponse:
+    """팔로우한 사용자들의 공개 커리큘럼 목록 조회"""
+    page_dto: CurriculumPageDTO = (
+        await curriculum_service.get_following_users_curriculums(
+            user_id=current_user.id,
+            page=page,
+            items_per_page=items_per_page,
+        )
+    )
+    return CurriculumsPageResponse.from_dto(page_dto)

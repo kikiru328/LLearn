@@ -35,6 +35,7 @@ from app.modules.curriculum.domain.vo.title import Title
 from app.modules.curriculum.domain.vo.visibility import Visibility
 from app.modules.curriculum.domain.vo.week_number import WeekNumber
 from app.modules.user.domain.vo.role import RoleVO
+from app.modules.social.domain.repository.follow_repo import IFollowRepository
 
 
 class CurriculumService:
@@ -43,6 +44,7 @@ class CurriculumService:
         curriculum_repo: ICurriculumRepository,
         curriculum_domain_service: CurriculumDomainService,
         llm_client: ILLMClientRepository,
+        follow_repo: IFollowRepository,  # 추가
         ulid: ULID = ULID(),
     ) -> None:
 
@@ -52,6 +54,7 @@ class CurriculumService:
         )
         self.llm_client: ILLMClientRepository = llm_client
         self.ulid: ULID = ulid
+        self.follow_repo: IFollowRepository = follow_repo  # 추가
 
     def _parse_llm_response(self, llm_response: dict, goal: str) -> dict:  # type: ignore
         try:
@@ -470,3 +473,42 @@ class CurriculumService:
 
         await self.curriculum_repo.update(curriculum)
         return CurriculumDTO.from_domain(curriculum)
+
+    async def get_following_users_curriculums(
+        self,
+        user_id: str,
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> CurriculumPageDTO:
+        """팔로우한 사용자들의 public 커리큘럼 목록 조회"""
+
+        # 팔로우한 사용자들 조회
+        _, follows = await self.follow_repo.find_followees(
+            user_id, page=1, items_per_page=1000  # 모든 팔로잉 사용자 조회
+        )
+
+        if not follows:
+            return CurriculumPageDTO.from_domain(
+                total_count=0,
+                page=page,
+                items_per_page=items_per_page,
+                curriculums=[],
+            )
+
+        followee_ids = [follow.followee_id for follow in follows]
+
+        # 팔로우한 사용자들의 public 커리큘럼 조회
+        total_count, curriculums = (
+            await self.curriculum_repo.find_public_curriculums_by_users(
+                user_ids=followee_ids,
+                page=page,
+                items_per_page=items_per_page,
+            )
+        )
+
+        return CurriculumPageDTO.from_domain(
+            total_count=total_count,
+            page=page,
+            items_per_page=items_per_page,
+            curriculums=curriculums,
+        )

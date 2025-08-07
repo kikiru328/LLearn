@@ -5,7 +5,11 @@ from dependency_injector.wiring import inject, Provide
 from app.core.auth import CurrentUser, get_current_user
 from app.core.di_container import Container
 from app.modules.taxonomy.application.service.tag_service import TagService
-from app.modules.taxonomy.application.dto.tag_dto import TagQuery
+from app.modules.taxonomy.application.dto.tag_dto import (
+    CreateTagCommand,
+    TagDTO,
+    TagQuery,
+)
 from app.modules.taxonomy.interface.schema.tag_schema import (
     CreateTagRequest,
     UpdateTagRequest,
@@ -17,10 +21,10 @@ from app.modules.taxonomy.interface.schema.tag_schema import (
 )
 
 
-router = APIRouter(prefix="/tags", tags=["Tags"])
+tag_router = APIRouter(prefix="/tags", tags=["Tags"])
 
 
-@router.post("/", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
+@tag_router.post("/", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
 @inject
 async def create_tag(
     request: CreateTagRequest,
@@ -28,12 +32,12 @@ async def create_tag(
     tag_service: TagService = Depends(Provide[Container.tag_service]),
 ) -> TagResponse:
     """태그 생성"""
-    command = request.to_command(created_by=current_user.id)
-    dto = await tag_service.create_tag(command)
+    command: CreateTagCommand = request.to_command(created_by=current_user.id)
+    dto: TagDTO = await tag_service.create_tag(command)
     return TagResponse.from_dto(dto)
 
 
-@router.get("/popular", response_model=list[TagBriefResponse])
+@tag_router.get("/popular", response_model=list[TagBriefResponse])
 @inject
 async def get_popular_tags(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -46,7 +50,7 @@ async def get_popular_tags(
     return [TagBriefResponse.from_dto(tag) for tag in tags]
 
 
-@router.get("/search", response_model=TagSearchResponse)
+@tag_router.get("/search", response_model=TagSearchResponse)
 @inject
 async def search_tags(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -59,7 +63,7 @@ async def search_tags(
     return TagSearchResponse.from_dto_list(tags)
 
 
-@router.get("/", response_model=TagPageResponse)
+@tag_router.get("/", response_model=TagPageResponse)
 @inject
 async def get_tags(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -80,7 +84,7 @@ async def get_tags(
     return TagPageResponse.from_dto(page_dto)
 
 
-@router.get("/statistics", response_model=TagStatisticsResponse)
+@tag_router.get("/statistics", response_model=TagStatisticsResponse)
 @inject
 async def get_tag_statistics(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -96,7 +100,7 @@ async def get_tag_statistics(
     )
 
 
-@router.get("/{tag_id}", response_model=TagResponse)
+@tag_router.get("/{tag_id}", response_model=TagResponse)
 @inject
 async def get_tag_by_id(
     tag_id: str,
@@ -108,7 +112,7 @@ async def get_tag_by_id(
     return TagResponse.from_dto(dto)
 
 
-@router.patch("/{tag_id}", response_model=TagResponse)
+@tag_router.patch("/{tag_id}", response_model=TagResponse)
 @inject
 async def update_tag(
     tag_id: str,
@@ -122,7 +126,7 @@ async def update_tag(
     return TagResponse.from_dto(dto)
 
 
-@router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+@tag_router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
 @inject
 async def delete_tag(
     tag_id: str,

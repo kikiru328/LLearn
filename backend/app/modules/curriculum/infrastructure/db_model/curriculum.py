@@ -11,6 +11,9 @@ if TYPE_CHECKING:
         WeekScheduleModel,
     )
     from app.modules.learning.infrastructure.db_model.summary import SummaryModel
+    from app.modules.social.infrastructure.db_model.like import LikeModel
+    from app.modules.social.infrastructure.db_model.comment import CommentModel
+    from app.modules.social.infrastructure.db_model.bookmark import BookmarkModel
 
 
 class CurriculumModel(Base):
@@ -46,6 +49,24 @@ class CurriculumModel(Base):
     summaries: Mapped[list["SummaryModel"]] = relationship(
         "SummaryModel",
         back_populates="curriculum",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    likes: Mapped[list["LikeModel"]] = relationship(
+        "LikeModel",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    comments: Mapped[list["CommentModel"]] = relationship(
+        "CommentModel",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    bookmarks: Mapped[list["BookmarkModel"]] = relationship(
+        "BookmarkModel",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )

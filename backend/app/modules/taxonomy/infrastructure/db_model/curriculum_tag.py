@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class CurriculumTagModel(Base):
     __tablename__ = "curriculum_tags"
 
-    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    id: Mapped[str] = mapped_column(String(53), primary_key=True)
     curriculum_id: Mapped[str] = mapped_column(
         String(26), ForeignKey("curriculums.id", ondelete="CASCADE"), nullable=False
     )
@@ -55,7 +55,7 @@ class CurriculumTagModel(Base):
 class CurriculumCategoryModel(Base):
     __tablename__ = "curriculum_categories"
 
-    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    id: Mapped[str] = mapped_column(String(53), primary_key=True)
     curriculum_id: Mapped[str] = mapped_column(
         String(26), ForeignKey("curriculums.id", ondelete="CASCADE"), nullable=False
     )

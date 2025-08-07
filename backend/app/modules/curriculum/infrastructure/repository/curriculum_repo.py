@@ -1,5 +1,5 @@
 from typing import List, Optional, Sequence, Tuple
-from sqlalchemy import Result, Select, func, select, or_
+from sqlalchemy import Result, Select, and_, func, select, or_
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.curriculum.domain.entity.curriculum import (
@@ -191,3 +191,43 @@ class CurriculumRepository(ICurriculumRepository):
             CurriculumModel, curriculum_id
         )
         return model is not None
+
+    async def find_public_curriculums_by_users(
+        self,
+        user_ids: List[str],
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[CurriculumDomain]]:
+        """특정 사용자들의 공개 커리큘럼 목록 조회"""
+        if not user_ids:
+            return 0, []
+
+        base_query: Select[Tuple[CurriculumModel]] = (
+            select(CurriculumModel)
+            .where(
+                and_(
+                    CurriculumModel.user_id.in_(user_ids),
+                    CurriculumModel.visibility == Visibility.PUBLIC.value,
+                )
+            )
+            .options(selectinload(CurriculumModel.week_schedules))
+        )
+
+        # 총 개수 조회
+        count_query: Select[Tuple[int]] = select(func.count()).select_from(
+            base_query.subquery()
+        )
+        total_count: int = await self.session.scalar(count_query) or 0
+
+        # 페이지네이션
+        offset: int = (page - 1) * items_per_page
+        paged_query: Select[Tuple[CurriculumModel]] = (
+            base_query.limit(items_per_page)
+            .offset(offset)
+            .order_by(CurriculumModel.created_at.desc())
+        )
+
+        result: Result[Tuple[CurriculumModel]] = await self.session.execute(paged_query)
+        models: Sequence[CurriculumModel] = result.scalars().all()
+
+        return total_count, [self._to_domain(m) for m in models]

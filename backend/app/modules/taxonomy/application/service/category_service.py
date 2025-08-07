@@ -18,10 +18,12 @@ from app.modules.taxonomy.application.exception import (
     InvalidColorFormatError,
     CategoryInUseError,
 )
+from app.modules.taxonomy.domain.entity.category import Category
 from app.modules.taxonomy.domain.repository.category_repo import ICategoryRepository
 from app.modules.taxonomy.domain.repository.curriculum_tag_repo import (
     ICurriculumCategoryRepository,
 )
+from app.modules.taxonomy.domain.vo.category_name import CategoryName
 from app.modules.taxonomy.domain.vo.tag_color import TagColor
 from app.modules.taxonomy.domain.service.tag_domain_service import TagDomainService
 from app.modules.user.domain.vo.role import RoleVO
@@ -37,10 +39,12 @@ class CategoryService:
         tag_domain_service: TagDomainService,
         ulid: ULID = ULID(),
     ) -> None:
-        self.category_repo = category_repo
-        self.curriculum_category_repo = curriculum_category_repo
+        self.category_repo: ICategoryRepository = category_repo
+        self.curriculum_category_repo: ICurriculumCategoryRepository = (
+            curriculum_category_repo
+        )
         self.tag_domain_service = tag_domain_service
-        self.ulid = ulid
+        self.ulid: ULID = ulid
 
     async def create_category(
         self,
@@ -59,12 +63,12 @@ class CategoryService:
 
             # 다음 정렬 순서 설정
             if command.sort_order == 0:
-                sort_order = await self.tag_domain_service.get_next_sort_order()
+                sort_order: int = await self.tag_domain_service.get_next_sort_order()
             else:
                 sort_order = command.sort_order
 
             # 카테고리 생성
-            category = await self.tag_domain_service.create_category(
+            category: Category = await self.tag_domain_service.create_category(
                 category_id=self.ulid.generate(),
                 name=command.name,
                 description=command.description,
@@ -91,17 +95,19 @@ class CategoryService:
         role: Role | RoleVO = RoleVO.USER,
     ) -> CategoryDTO:
         """ID로 카테고리 조회"""
-        category = await self.category_repo.find_by_id(category_id)
+        category: Category | None = await self.category_repo.find_by_id(category_id)
         if not category:
             raise CategoryNotFoundError(f"Category {category_id} not found")
 
         # 사용 횟수 조회
-        usage_count = await self.curriculum_category_repo.count_by_category(category_id)
+        usage_count: int = await self.curriculum_category_repo.count_by_category(
+            category_id
+        )
         return CategoryDTO.from_domain(category, usage_count)
 
     async def get_active_categories(self) -> List[CategoryDTO]:
         """활성화된 카테고리 목록 조회"""
-        categories = await self.category_repo.find_all_active()
+        categories: List[Category] = await self.category_repo.find_all_active()
 
         # 각 카테고리의 사용 횟수 조회
         category_dtos = []
@@ -127,7 +133,7 @@ class CategoryService:
         # 각 카테고리의 사용 횟수 조회
         usage_counts = []
         for category in categories:
-            usage_count = await self.curriculum_category_repo.count_by_category(
+            usage_count: int = await self.curriculum_category_repo.count_by_category(
                 category.id
             )
             usage_counts.append(usage_count)
@@ -150,15 +156,19 @@ class CategoryService:
         if role != RoleVO.ADMIN:
             raise CategoryAccessDeniedError("Only administrators can modify categories")
 
-        category = await self.category_repo.find_by_id(command.category_id)
+        category: Category | None = await self.category_repo.find_by_id(
+            command.category_id
+        )
         if not category:
             raise CategoryNotFoundError(f"Category {command.category_id} not found")
 
         try:
             # 이름 변경
             if command.name:
-                new_name = await self.tag_domain_service.validate_category_creation(
-                    command.name, category.id
+                new_name: CategoryName = (
+                    await self.tag_domain_service.validate_category_creation(
+                        command.name, category.id
+                    )
                 )
                 category.change_name(new_name)
 
@@ -185,7 +195,7 @@ class CategoryService:
             await self.category_repo.update(category)
 
             # 사용 횟수 포함하여 반환
-            usage_count = await self.curriculum_category_repo.count_by_category(
+            usage_count: int = await self.curriculum_category_repo.count_by_category(
                 category.id
             )
             return CategoryDTO.from_domain(category, usage_count)
@@ -207,14 +217,14 @@ class CategoryService:
         if role != RoleVO.ADMIN:
             raise CategoryAccessDeniedError("Only administrators can delete categories")
 
-        category = await self.category_repo.find_by_id(category_id)
+        category: Category | None = await self.category_repo.find_by_id(category_id)
         if not category:
             raise CategoryNotFoundError(f"Category {category_id} not found")
 
         # 삭제 가능 여부 확인
         if not await self.tag_domain_service.can_delete_category(category_id):
-            curriculum_count = await self.curriculum_category_repo.count_by_category(
-                category_id
+            curriculum_count: int = (
+                await self.curriculum_category_repo.count_by_category(category_id)
             )
             raise CategoryInUseError(
                 f"Category is used by {curriculum_count} curriculums"
@@ -234,14 +244,16 @@ class CategoryService:
                 "Only administrators can activate categories"
             )
 
-        category = await self.category_repo.find_by_id(category_id)
+        category: Category | None = await self.category_repo.find_by_id(category_id)
         if not category:
             raise CategoryNotFoundError(f"Category {category_id} not found")
 
         category.activate()
         await self.category_repo.update(category)
 
-        usage_count = await self.curriculum_category_repo.count_by_category(category_id)
+        usage_count: int = await self.curriculum_category_repo.count_by_category(
+            category_id
+        )
         return CategoryDTO.from_domain(category, usage_count)
 
     async def deactivate_category(
@@ -256,14 +268,16 @@ class CategoryService:
                 "Only administrators can deactivate categories"
             )
 
-        category = await self.category_repo.find_by_id(category_id)
+        category: Category | None = await self.category_repo.find_by_id(category_id)
         if not category:
             raise CategoryNotFoundError(f"Category {category_id} not found")
 
         category.deactivate()
         await self.category_repo.update(category)
 
-        usage_count = await self.curriculum_category_repo.count_by_category(category_id)
+        usage_count: int = await self.curriculum_category_repo.count_by_category(
+            category_id
+        )
         return CategoryDTO.from_domain(category, usage_count)
 
     async def reorder_categories(

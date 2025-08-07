@@ -32,6 +32,7 @@ from app.modules.curriculum.domain.service.curriculum_domain_service import (
 )
 from app.modules.curriculum.domain.vo import Title, Visibility, WeekNumber, Lessons
 from app.modules.curriculum.domain.vo.difficulty import Difficulty
+from app.modules.social.domain.repository.follow_repo import IFollowRepository
 from app.modules.user.domain.vo.role import RoleVO
 
 
@@ -50,6 +51,7 @@ class TestCurriculumService:
         mock_curriculum_repo: AsyncMock = mocker.AsyncMock(spec=ICurriculumRepository)
         mock_curriculum_domain_service: Mock = mocker.Mock(spec=CurriculumDomainService)
         mock_llm_client: AsyncMock = mocker.AsyncMock(spec=ILLMClientRepository)
+        mock_follow_repo: AsyncMock = mocker.AsyncMock(spec=IFollowRepository)
         mock_ulid: Mock = mocker.Mock(spec=ULID)
         mock_ulid.generate.return_value = "01HKQJQJQJQJQJQJQJQJQJ"
 
@@ -57,6 +59,7 @@ class TestCurriculumService:
             curriculum_repo=mock_curriculum_repo,
             curriculum_domain_service=mock_curriculum_domain_service,
             llm_client=mock_llm_client,
+            follow_repo=mock_follow_repo,
             ulid=mock_ulid,
         )
 
@@ -568,12 +571,14 @@ class TestCurriculumWeekManagement:
         mock_curriculum_domain_service: Mock = mocker.Mock(spec=CurriculumDomainService)
         mock_llm_client: AsyncMock = mocker.AsyncMock(spec=ILLMClientRepository)
         mock_ulid: Mock = mocker.Mock(spec=ULID)
+        mock_follow_repo: AsyncMock = mocker.AsyncMock(spec=IFollowRepository)
         mock_ulid.generate.return_value = "01HKQJQJQJQJQJQJQJQJQJ"
 
         service = CurriculumService(
             curriculum_repo=mock_curriculum_repo,
             curriculum_domain_service=mock_curriculum_domain_service,
             llm_client=mock_llm_client,
+            follow_repo=mock_follow_repo,
             ulid=mock_ulid,
         )
 
@@ -740,12 +745,14 @@ class TestCurriculumLessonManagement:
         mock_curriculum_domain_service: Mock = mocker.Mock(spec=CurriculumDomainService)
         mock_llm_client: AsyncMock = mocker.AsyncMock(spec=ILLMClientRepository)
         mock_ulid: Mock = mocker.Mock(spec=ULID)
+        mock_follow_repo: AsyncMock = mocker.AsyncMock(spec=IFollowRepository)
         mock_ulid.generate.return_value = "01HKQJQJQJQJQJQJQJQJQJ"
 
         service = CurriculumService(
             curriculum_repo=mock_curriculum_repo,
             curriculum_domain_service=mock_curriculum_domain_service,
             llm_client=mock_llm_client,
+            follow_repo=mock_follow_repo,
             ulid=mock_ulid,
         )
 

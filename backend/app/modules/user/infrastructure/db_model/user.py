@@ -10,6 +10,9 @@ if TYPE_CHECKING:
     from app.modules.curriculum.infrastructure.db_model.curriculum import (
         CurriculumModel,
     )
+    from app.modules.social.infrastructure.db_model.like import LikeModel
+    from app.modules.social.infrastructure.db_model.comment import CommentModel
+    from app.modules.social.infrastructure.db_model.bookmark import BookmarkModel
 
 
 class UserModel(Base):
@@ -28,6 +31,24 @@ class UserModel(Base):
     curricula: Mapped[list["CurriculumModel"]] = relationship(
         "CurriculumModel",
         back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    likes: Mapped[list["LikeModel"]] = relationship(
+        "LikeModel",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    comments: Mapped[list["CommentModel"]] = relationship(
+        "CommentModel",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+    bookmarks: Mapped[list["BookmarkModel"]] = relationship(
+        "BookmarkModel",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )

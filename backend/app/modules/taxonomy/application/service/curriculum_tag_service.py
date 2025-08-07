@@ -1,6 +1,7 @@
 from typing import List
 from ulid import ULID  # type: ignore
 
+from app.modules.curriculum.domain.entity.curriculum import Curriculum
 from app.modules.taxonomy.application.dto.tag_dto import (
     AddTagsToCurriculumCommand,
     RemoveTagFromCurriculumCommand,
@@ -16,6 +17,8 @@ from app.modules.taxonomy.application.exception import (
     TagLimitExceededError,
     InactiveCategoryAssignmentError,
 )
+from app.modules.taxonomy.domain.entity.category import Category
+from app.modules.taxonomy.domain.entity.tag import Tag
 from app.modules.taxonomy.domain.service.tag_domain_service import TagDomainService
 from app.modules.taxonomy.domain.repository.curriculum_tag_repo import (
     ICurriculumTagRepository,
@@ -38,11 +41,13 @@ class CurriculumTagService:
         curriculum_repo: ICurriculumRepository,
         ulid: ULID = ULID(),
     ) -> None:
-        self.tag_domain_service = tag_domain_service
-        self.curriculum_tag_repo = curriculum_tag_repo
-        self.curriculum_category_repo = curriculum_category_repo
-        self.curriculum_repo = curriculum_repo
-        self.ulid = ulid
+        self.tag_domain_service: TagDomainService = tag_domain_service
+        self.curriculum_tag_repo: ICurriculumTagRepository = curriculum_tag_repo
+        self.curriculum_category_repo: ICurriculumCategoryRepository = (
+            curriculum_category_repo
+        )
+        self.curriculum_repo: ICurriculumRepository = curriculum_repo
+        self.ulid: ULID = ulid
 
     async def add_tags_to_curriculum(
         self,
@@ -51,7 +56,7 @@ class CurriculumTagService:
     ) -> List[TagDTO]:
         """커리큘럼에 태그 추가"""
         # 커리큘럼 존재 및 권한 확인
-        curriculum = await self.curriculum_repo.find_by_id(
+        curriculum: Curriculum | None = await self.curriculum_repo.find_by_id(
             curriculum_id=command.curriculum_id,
             role=role,
             owner_id=command.user_id if role != RoleVO.ADMIN else None,
@@ -72,7 +77,7 @@ class CurriculumTagService:
             raise TagLimitExceededError("Cannot add more than 10 tags to a curriculum")
 
         # 태그 추가
-        added_tags = await self.tag_domain_service.add_tags_to_curriculum(
+        added_tags: List[Tag] = await self.tag_domain_service.add_tags_to_curriculum(
             curriculum_id=command.curriculum_id,
             tag_names=command.tag_names,
             user_id=command.user_id,
@@ -88,7 +93,7 @@ class CurriculumTagService:
     ) -> None:
         """커리큘럼에서 태그 제거"""
         # 커리큘럼 존재 및 권한 확인
-        curriculum = await self.curriculum_repo.find_by_id(
+        curriculum: Curriculum | None = await self.curriculum_repo.find_by_id(
             curriculum_id=command.curriculum_id,
             role=role,
             owner_id=user_id if role != RoleVO.ADMIN else None,
@@ -116,7 +121,7 @@ class CurriculumTagService:
     ) -> CategoryDTO:
         """커리큘럼에 카테고리 할당"""
         # 커리큘럼 존재 및 권한 확인
-        curriculum = await self.curriculum_repo.find_by_id(
+        curriculum: Curriculum | None = await self.curriculum_repo.find_by_id(
             curriculum_id=command.curriculum_id,
             role=role,
             owner_id=command.user_id if role != RoleVO.ADMIN else None,
@@ -138,10 +143,12 @@ class CurriculumTagService:
         ):
             raise InactiveCategoryAssignmentError("Cannot assign inactive category")
 
-        category = await self.tag_domain_service.assign_category_to_curriculum(
-            curriculum_id=command.curriculum_id,
-            category_id=command.category_id,
-            user_id=command.user_id,
+        category: Category = (
+            await self.tag_domain_service.assign_category_to_curriculum(
+                curriculum_id=command.curriculum_id,
+                category_id=command.category_id,
+                user_id=command.user_id,
+            )
         )
 
         return CategoryDTO.from_domain(category)
@@ -154,7 +161,7 @@ class CurriculumTagService:
     ) -> None:
         """커리큘럼에서 카테고리 제거"""
         # 커리큘럼 존재 및 권한 확인
-        curriculum = await self.curriculum_repo.find_by_id(
+        curriculum: Curriculum | None = await self.curriculum_repo.find_by_id(
             curriculum_id=curriculum_id,
             role=role,
             owner_id=user_id if role != RoleVO.ADMIN else None,
@@ -175,7 +182,7 @@ class CurriculumTagService:
     ) -> CurriculumTagsDTO:
         """커리큘럼의 태그와 카테고리 조회"""
         # 커리큘럼 존재 확인 (공개 커리큘럼도 조회 가능)
-        curriculum = await self.curriculum_repo.find_by_id(
+        curriculum: Curriculum | None = await self.curriculum_repo.find_by_id(
             curriculum_id=curriculum_id,
             role=role,
             owner_id=user_id if role != RoleVO.ADMIN else None,
@@ -187,8 +194,10 @@ class CurriculumTagService:
         tags = await self.curriculum_tag_repo.find_tags_by_curriculum(curriculum_id)
 
         # 카테고리 조회
-        category = await self.curriculum_category_repo.find_category_by_curriculum(
-            curriculum_id
+        category: Category | None = (
+            await self.curriculum_category_repo.find_category_by_curriculum(
+                curriculum_id
+            )
         )
 
         return CurriculumTagsDTO.from_domain(
@@ -244,5 +253,5 @@ class CurriculumTagService:
                 user_id, page, items_per_page
             )
         )
-        curriculum_ids = [cc.curriculum_id for cc in curriculum_categories]
+        curriculum_ids: List[str] = [cc.curriculum_id for cc in curriculum_categories]
         return total_count, curriculum_ids

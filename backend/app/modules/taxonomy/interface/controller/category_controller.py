@@ -17,10 +17,12 @@ from app.modules.taxonomy.interface.schema.tag_schema import (
 )
 
 
-router = APIRouter(prefix="/categories", tags=["Categories"])
+category_router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
-@router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+@category_router.post(
+    "/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED
+)
 @inject
 async def create_category(
     request: CreateCategoryRequest,
@@ -35,7 +37,7 @@ async def create_category(
     return CategoryResponse.from_dto(dto)
 
 
-@router.get("/active", response_model=list[CategoryBriefResponse])
+@category_router.get("/active", response_model=list[CategoryBriefResponse])
 @inject
 async def get_active_categories(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -46,7 +48,7 @@ async def get_active_categories(
     return [CategoryBriefResponse.from_dto(category) for category in categories]
 
 
-@router.get("/", response_model=CategoryPageResponse)
+@category_router.get("/", response_model=CategoryPageResponse)
 @inject
 async def get_categories(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -65,7 +67,7 @@ async def get_categories(
     return CategoryPageResponse.from_dto(page_dto)
 
 
-@router.get("/statistics", response_model=CategoryStatisticsResponse)
+@category_router.get("/statistics", response_model=CategoryStatisticsResponse)
 @inject
 async def get_category_statistics(
     current_user: Annotated[CurrentUser, Depends(get_current_user)],
@@ -80,7 +82,7 @@ async def get_category_statistics(
     )
 
 
-@router.get("/{category_id}", response_model=CategoryResponse)
+@category_router.get("/{category_id}", response_model=CategoryResponse)
 @inject
 async def get_category_by_id(
     category_id: str,
@@ -94,7 +96,7 @@ async def get_category_by_id(
     return CategoryResponse.from_dto(dto)
 
 
-@router.patch("/{category_id}", response_model=CategoryResponse)
+@category_router.patch("/{category_id}", response_model=CategoryResponse)
 @inject
 async def update_category(
     category_id: str,
@@ -110,7 +112,7 @@ async def update_category(
     return CategoryResponse.from_dto(dto)
 
 
-@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+@category_router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 @inject
 async def delete_category(
     category_id: str,
@@ -123,7 +125,7 @@ async def delete_category(
     )
 
 
-@router.post("/{category_id}/activate", response_model=CategoryResponse)
+@category_router.post("/{category_id}/activate", response_model=CategoryResponse)
 @inject
 async def activate_category(
     category_id: str,
@@ -137,7 +139,7 @@ async def activate_category(
     return CategoryResponse.from_dto(dto)
 
 
-@router.post("/{category_id}/deactivate", response_model=CategoryResponse)
+@category_router.post("/{category_id}/deactivate", response_model=CategoryResponse)
 @inject
 async def deactivate_category(
     category_id: str,
@@ -151,7 +153,7 @@ async def deactivate_category(
     return CategoryResponse.from_dto(dto)
 
 
-@router.post("/reorder", status_code=status.HTTP_204_NO_CONTENT)
+@category_router.post("/reorder", status_code=status.HTTP_204_NO_CONTENT)
 @inject
 async def reorder_categories(
     request: CategoryReorderRequest,

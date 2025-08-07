@@ -59,3 +59,13 @@ class ICurriculumRepository(metaclass=ABCMeta):
     async def exists_by_id(self, curriculum_id: str) -> bool:
         """커리큘럼 존재 여부 확인"""
         raise NotImplementedError
+
+    @abstractmethod
+    async def find_public_curriculums_by_users(
+        self,
+        user_ids: List[str],
+        page: int = 1,
+        items_per_page: int = 10,
+    ) -> Tuple[int, List[Curriculum]]:
+        """특정 사용자들의 공개 커리큘럼 목록 조회"""
+        raise NotImplementedError

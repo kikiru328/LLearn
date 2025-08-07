@@ -23,6 +23,7 @@ from app.common.llm.llm_client_repo import ILLMClientRepository
 from app.modules.curriculum.domain.entity.curriculum import Curriculum
 from app.modules.curriculum.domain.entity.week_schedule import WeekSchedule
 from app.modules.curriculum.domain.vo import Title, Visibility, WeekNumber, Lessons
+from app.modules.social.domain.repository.follow_repo import IFollowRepository
 
 
 @pytest.fixture(autouse=True)  # type: ignore
@@ -72,6 +73,11 @@ def mock_llm_client(mocker: MockerFixture) -> AsyncMock:
 
 
 @pytest.fixture
+def mock_follow_repo(mocker: MockerFixture) -> AsyncMock:
+    return mocker.AsyncMock(spec=IFollowRepository)
+
+
+@pytest.fixture
 def mock_ulid(mocker: MockerFixture) -> Mock:
     ulid = mocker.Mock(spec=ULID)
     ulid.generate.return_value = "01HKQJQJQJQJQJQJQJQJQJ"
@@ -83,6 +89,7 @@ def curriculum_service(
     mock_curriculum_repo: AsyncMock,
     mock_curriculum_domain_service: Mock,
     mock_llm_client: AsyncMock,
+    mock_follow_repo: AsyncMock,
     mock_ulid: Mock,
 ) -> CurriculumService:
     """테스트 대상 CurriculumService 인스턴스"""
@@ -90,6 +97,7 @@ def curriculum_service(
         curriculum_repo=mock_curriculum_repo,
         curriculum_domain_service=mock_curriculum_domain_service,
         llm_client=mock_llm_client,
+        follow_repo=mock_follow_repo,
         ulid=mock_ulid,
     )
     return service

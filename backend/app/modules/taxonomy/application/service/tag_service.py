@@ -18,8 +18,10 @@ from app.modules.taxonomy.application.exception import (
     InvalidTagNameError,
     TagInUseError,
 )
+from app.modules.taxonomy.domain.entity.tag import Tag
 from app.modules.taxonomy.domain.repository.tag_repo import ITagRepository
 from app.modules.taxonomy.domain.service.tag_domain_service import TagDomainService
+from app.modules.taxonomy.domain.vo.tag_name import TagName
 from app.modules.user.domain.vo.role import RoleVO
 
 
@@ -32,9 +34,9 @@ class TagService:
         tag_domain_service: TagDomainService,
         ulid: ULID = ULID(),
     ) -> None:
-        self.tag_repo = tag_repo
-        self.tag_domain_service = tag_domain_service
-        self.ulid = ulid
+        self.tag_repo: ITagRepository = tag_repo
+        self.tag_domain_service: TagDomainService = tag_domain_service
+        self.ulid: ULID = ulid
 
     async def create_tag(
         self,
@@ -44,7 +46,7 @@ class TagService:
         """태그 생성"""
         try:
             # 도메인 서비스를 통한 태그 생성
-            tag = await self.tag_domain_service.create_tag(
+            tag: Tag = await self.tag_domain_service.create_tag(
                 tag_id=self.ulid.generate(),
                 name=command.name,
                 created_by=command.created_by,
@@ -64,7 +66,7 @@ class TagService:
         role: Role | RoleVO = RoleVO.USER,
     ) -> TagDTO:
         """ID로 태그 조회"""
-        tag = await self.tag_repo.find_by_id(tag_id)
+        tag: Tag | None = await self.tag_repo.find_by_id(tag_id)
         if not tag:
             raise TagNotFoundError(f"Tag {tag_id} not found")
 
@@ -78,8 +80,10 @@ class TagService:
     ) -> Optional[TagDTO]:
         """이름으로 태그 조회"""
         try:
-            tag_name = await self.tag_domain_service.validate_tag_creation(name)
-            tag = await self.tag_repo.find_by_name(tag_name)
+            tag_name: TagName = await self.tag_domain_service.validate_tag_creation(
+                name
+            )
+            tag: Tag | None = await self.tag_repo.find_by_name(tag_name)
             if not tag:
                 return None
 
@@ -94,7 +98,7 @@ class TagService:
         min_usage: int = 1,
     ) -> List[TagDTO]:
         """인기 태그 목록 조회"""
-        tags = await self.tag_repo.find_popular_tags(
+        tags: List[Tag] = await self.tag_repo.find_popular_tags(
             limit=limit,
             min_usage=min_usage,
         )
@@ -109,7 +113,7 @@ class TagService:
         if not query.strip():
             return []
 
-        tags = await self.tag_repo.search_by_name(query.strip(), limit)
+        tags: List[Tag] = await self.tag_repo.search_by_name(query.strip(), limit)
         return [TagDTO.from_domain(tag) for tag in tags]
 
     async def get_tags(
@@ -119,10 +123,10 @@ class TagService:
         """태그 목록 조회"""
         if query.search_query:
             # 검색 모드
-            tags = await self.tag_repo.search_by_name(
+            tags: List[Tag] = await self.tag_repo.search_by_name(
                 query.search_query, query.items_per_page
             )
-            total_count = len(tags)
+            total_count: int = len(tags)
             return TagPageDTO.from_domain(
                 total_count=total_count,
                 page=query.page,
@@ -149,7 +153,7 @@ class TagService:
         role: Role | RoleVO = RoleVO.USER,
     ) -> TagDTO:
         """태그 수정"""
-        tag = await self.tag_repo.find_by_id(command.tag_id)
+        tag: Tag | None = await self.tag_repo.find_by_id(command.tag_id)
         if not tag:
             raise TagNotFoundError(f"Tag {command.tag_id} not found")
 
@@ -160,7 +164,7 @@ class TagService:
         # 이름 변경
         if command.name and command.name.strip():
             try:
-                new_name = await self.tag_domain_service.validate_tag_creation(
+                new_name: TagName = await self.tag_domain_service.validate_tag_creation(
                     command.name
                 )
 
@@ -185,7 +189,7 @@ class TagService:
         role: Role | RoleVO = RoleVO.USER,
     ) -> None:
         """태그 삭제"""
-        tag = await self.tag_repo.find_by_id(tag_id)
+        tag: Tag | None = await self.tag_repo.find_by_id(tag_id)
         if not tag:
             raise TagNotFoundError(f"Tag {tag_id} not found")
 
@@ -214,8 +218,10 @@ class TagService:
     ) -> List[TagDTO]:
         """태그 이름 리스트로 태그들을 찾거나 생성"""
         try:
-            tags = await self.tag_domain_service.find_or_create_tags_by_names(
-                tag_names, created_by
+            tags: List[Tag] = (
+                await self.tag_domain_service.find_or_create_tags_by_names(
+                    tag_names, created_by
+                )
             )
             return [TagDTO.from_domain(tag) for tag in tags]
 
