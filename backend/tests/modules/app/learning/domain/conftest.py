@@ -38,6 +38,7 @@ def sample_summary():
         content=SummaryContent(
             "파이썬 기초 문법에 대해 학습한 내용을 요약합니다. " * 5
         ),
+        owner_id="01HGU123456789",
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
     )

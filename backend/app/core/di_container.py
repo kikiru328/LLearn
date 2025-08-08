@@ -59,6 +59,7 @@ class Container(containers.DeclarativeContainer):
             "app.modules.taxonomy.interface.controller",
             "app.modules.social.interface.controller",
             "app.modules.feed.interface.controller.feed_controller",
+            "app.modules.alarm.interface.controller",
         ]
     )
 

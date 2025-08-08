@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_endpoint: str = ""
     redis_url: str = ""
+    kafka_bootstrap_servers: str = ""
 
 
 @lru_cache

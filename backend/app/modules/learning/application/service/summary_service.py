@@ -58,6 +58,7 @@ class SummaryService:
             curriculum_id=command.curriculum_id,
             week_number=command.week_number,
             content=command.content,
+            owner_id=command.owner_id,
         )
 
         await self.summary_repo.save(summary)
@@ -77,7 +78,7 @@ class SummaryService:
         # 접근 권한 확인
         can_access: bool = await self.learning_domain_service.can_access_summary(
             summary=summary,
-            user_id=user_id,
+            owner_id=user_id,
             role=role,
         )
 
@@ -131,7 +132,7 @@ class SummaryService:
         for summary in summaries:
             can_access: bool = await self.learning_domain_service.can_access_summary(
                 summary=summary,
-                user_id=user_id,
+                owner_id=user_id,
                 role=role,
             )
             if can_access:

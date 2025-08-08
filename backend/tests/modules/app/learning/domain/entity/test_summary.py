@@ -13,6 +13,7 @@ class TestSummary:
         return Summary(
             id="01HGQ123456789",
             curriculum_id="01HGP123456789",
+            owner_id="01HGP123456789",
             week_number=WeekNumber(1),
             content=SummaryContent("파이썬 기초 문법에 대해 학습했습니다. " * 10),
             created_at=datetime.now(timezone.utc),
@@ -48,6 +49,7 @@ class TestSummary:
             Summary(
                 id="",
                 curriculum_id="01HGP123456789",
+                owner_id="01HGP123456789",
                 week_number=WeekNumber(1),
                 content=SummaryContent("a" * 100),
                 created_at=datetime.now(timezone.utc),
@@ -111,6 +113,7 @@ class TestSummary:
         summary = Summary(
             id="01HGQ123456789",
             curriculum_id="01HGP123456789",
+            owner_id="01HGP123456789",
             week_number=WeekNumber(1),
             content=SummaryContent(long_content),
             created_at=datetime.now(timezone.utc),
@@ -127,6 +130,7 @@ class TestSummary:
         summary = Summary(
             id="01HGQ123456789",
             curriculum_id="01HGP123456789",
+            owner_id="01HGP123456789",
             week_number=WeekNumber(1),
             content=SummaryContent(short_content),
             created_at=datetime.now(timezone.utc),
