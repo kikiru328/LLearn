@@ -36,6 +36,8 @@ from app.modules.curriculum.domain.vo.visibility import Visibility
 from app.modules.curriculum.domain.vo.week_number import WeekNumber
 from app.modules.user.domain.vo.role import RoleVO
 from app.modules.social.domain.repository.follow_repo import IFollowRepository
+from app.common.monitoring.metrics import increment_curriculum_creation
+from app.common.llm.decorators import trace_llm_operation
 
 
 class CurriculumService:
@@ -158,16 +160,17 @@ class CurriculumService:
 
         await self.curriculum_repo.save(curriculum)
 
-        # if (curriculum.visibility == Visibility.PUBLIC and
-        #     self.feed_event_handler):
-        #     await self.feed_event_handler.on_curriculum_created(curriculum.id)
+        increment_curriculum_creation()
 
         return CurriculumDTO.from_domain(curriculum)
 
+    @trace_llm_operation("generate_curriculum")
     async def generate_curriculum(
         self,
         command: GenerateCurriculumCommand,
     ) -> CurriculumDTO:
+        print(f"🔥🔥🔥 LLM Client Type: {type(self.llm_client).__name__}")
+        print(f"🔥🔥🔥 LLM Client Module: {type(self.llm_client).__module__}")
 
         count: int = await self.curriculum_repo.count_by_owner(command.owner_id)
         if count >= 10:
@@ -200,6 +203,7 @@ class CurriculumService:
         )
 
         await self.curriculum_repo.save(curriculum)
+        increment_curriculum_creation()
         return CurriculumDTO.from_domain(curriculum)
 
     async def get_curriculums(

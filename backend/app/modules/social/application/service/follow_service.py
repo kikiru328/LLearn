@@ -15,13 +15,14 @@ from app.modules.social.application.exception import (
     AlreadyFollowingError,
     NotFollowingError,
     SelfFollowError,
-    UserNotFoundError,
 )
 from app.modules.social.domain.entity.follow import Follow
 from app.modules.social.domain.repository.follow_repo import IFollowRepository
 from app.modules.social.domain.service.follow_domain_service import FollowDomainService
+from app.modules.user.application.exception import UserNotFoundError
 from app.modules.user.domain.repository.user_repo import IUserRepository
 from app.modules.user.domain.entity.user import User
+from app.common.monitoring.metrics import increment_follow_creation
 
 
 class FollowService:
@@ -71,6 +72,7 @@ class FollowService:
             )
 
             await self.follow_repo.save(follow)
+            increment_follow_creation()
             return FollowDTO.from_domain(follow)
 
         except ValueError as e:

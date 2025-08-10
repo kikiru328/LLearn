@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, List
 from ulid import ULID  # type: ignore
-
+from app.common.monitoring.metrics import increment_feedback_creation
 from app.common.llm.llm_client_repo import ILLMClientRepository
 from app.modules.curriculum.domain.entity.curriculum import Curriculum
 from app.modules.curriculum.domain.entity.week_schedule import WeekSchedule
@@ -31,6 +31,8 @@ from app.modules.curriculum.domain.repository.curriculum_repo import (
 from app.modules.learning.domain.vo.feedback_comment import FeedbackComment
 from app.modules.learning.domain.vo.feedback_score import FeedbackScore
 from app.modules.user.domain.vo.role import RoleVO
+
+from app.common.llm.decorators import trace_llm_operation
 
 
 class FeedbackService:
@@ -86,8 +88,10 @@ class FeedbackService:
         )
 
         await self.feedback_repo.save(feedback)
+        increment_feedback_creation()
         return FeedbackDTO.from_domain(feedback)
 
+    @trace_llm_operation("generate_feedback")
     async def generate_feedback_with_llm(
         self,
         summary_id: str,
@@ -153,6 +157,7 @@ class FeedbackService:
             )
 
             await self.feedback_repo.save(feedback)
+            increment_feedback_creation()
             return FeedbackDTO.from_domain(feedback)
 
         except Exception as e:
