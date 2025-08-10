@@ -6,7 +6,7 @@ authors = [
     {name = "kikiru328",email = "kikiru328@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<4.0"
 dependencies = [
     "uvicorn[standard] (>=0.35.0,<0.36.0)",
     "fastapi (>=0.116.1,<0.117.0)",
@@ -28,6 +28,13 @@ dependencies = [
     "aiohttp (>=3.12.14,<4.0.0)",
     "py-ulid (>=1.0.3,<2.0.0)",
     "prometheus-client (>=0.22.1,<0.23.0)",
+    "redis[async] (>=6.4.0,<7.0.0)",
+    "hiredis (>=3.2.1,<4.0.0)",
+    "celery (>=5.5.3,<6.0.0)",
+    "aiokafka (>=0.12.0,<0.13.0)",
+    "langchain (>=0.3.27,<0.4.0)",
+    "langchain-openai (>=0.3.29,<0.4.0)",
+    "langfuse (>=3.2.3,<4.0.0)",
 ]
 
 
@@ -39,5 +46,8 @@ build-backend = "poetry.core.masonry.api"
 pytest = "^8.4.1"
 black = "^25.1.0"
 faker = "^37.4.2"
-sqlalchemy2-stubs = "^0.0.2a38"
+freezegun = "^1.5.4"
+pytest-mock = "^3.14.1"
+pytest-asyncio = "^1.1.0"
+greenlet = "^3.2.3"
 

@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     default-libmysqlclient-dev \
     default-mysql-client \
+    redis-tools \
     pkg-config \
     curl \
     && apt-get clean \
@@ -29,8 +30,8 @@ RUN poetry install --no-root
 
 COPY . .
 
-RUN chmod +x /workspace/startup.sh
-COPY startup.sh /workspace/startup.sh
+COPY ./script/startup.sh /workspace/script/startup.sh
+RUN chmod +x /workspace/script/startup.sh
 
 EXPOSE 8000
-CMD ["sh", "/workspace/startup.sh"]
+CMD ["sh", "/workspace/script/startup.sh"]
