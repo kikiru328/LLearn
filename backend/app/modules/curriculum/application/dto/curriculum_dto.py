@@ -1,11 +1,14 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Sequence, Tuple, TypeAlias
 
 from app.modules.curriculum.domain.entity.curriculum import Curriculum
 from app.modules.curriculum.domain.entity.week_schedule import WeekSchedule
 from app.modules.curriculum.domain.vo.difficulty import Difficulty
 from app.modules.curriculum.domain.vo.visibility import Visibility
+
+
+WeekData: TypeAlias = Tuple[int, List[str]] | Tuple[int, Optional[str], List[str]]
 
 
 @dataclass
@@ -14,7 +17,7 @@ class CreateCurriculumCommand:
 
     owner_id: str
     title: str
-    week_schedules: List[tuple[int, List[str]]]  # (week_number, lessons)
+    week_schedules: Sequence[WeekData]
     visibility: Visibility = Visibility.PRIVATE
 
 
@@ -63,6 +66,7 @@ class CreateWeekScheduleCommand:
     owner_id: str
     week_number: int
     lessons: List[str]
+    title: Optional[str] = None
 
 
 @dataclass
@@ -112,12 +116,14 @@ class WeekScheduleDTO:
     """주차 스케줄 전송 객체"""
 
     week_number: int
+    title: str
     lessons: List[str]
 
     @classmethod
     def from_domain(cls, week_schedule: WeekSchedule) -> "WeekScheduleDTO":
         return cls(
             week_number=week_schedule.week_number.value,
+            title=week_schedule.title.value,
             lessons=week_schedule.lessons.items,
         )
 
@@ -157,6 +163,7 @@ class CurriculumBriefDTO:
     owner_id: str
     title: str
     visibility: str
+    week_schedules: List[WeekScheduleDTO]
     total_weeks: int
     total_lessons: int
     created_at: datetime
@@ -169,6 +176,9 @@ class CurriculumBriefDTO:
             owner_id=curriculum.owner_id,
             title=curriculum.title.value,
             visibility=curriculum.visibility.value,
+            week_schedules=[  # ✅ 도메인 → DTO 매핑
+                WeekScheduleDTO.from_domain(ws) for ws in curriculum.week_schedules
+            ],
             total_weeks=curriculum.get_total_weeks(),
             total_lessons=curriculum.get_total_lessons(),
             created_at=curriculum.created_at,

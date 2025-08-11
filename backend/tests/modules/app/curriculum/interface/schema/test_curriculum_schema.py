@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime, timezone
 from pydantic import ValidationError
 
-from app.modules.curriculum.interface.schema.curriculum_schema import (
+from backend.app.modules.curriculum.interface.schema.curriculum_schema import (
     CreateCurriculumRequest,
     UpdateCurriculumRequest,
     CreateWeekScheduleRequest,
@@ -14,7 +14,7 @@ from app.modules.curriculum.interface.schema.curriculum_schema import (
     CurriculumsPageResponse,
     WeekScheduleRequest,
 )
-from app.modules.curriculum.application.dto.curriculum_dto import (
+from backend.app.modules.curriculum.application.dto.curriculum_dto import (
     CreateCurriculumCommand,
     UpdateCurriculumCommand,
     CreateWeekScheduleCommand,
@@ -26,8 +26,8 @@ from app.modules.curriculum.application.dto.curriculum_dto import (
     CurriculumPageDTO,
     WeekScheduleDTO,
 )
-from app.modules.curriculum.domain.vo.difficulty import Difficulty
-from app.modules.curriculum.domain.vo.visibility import Visibility
+from backend.app.modules.curriculum.domain.vo.difficulty import Difficulty
+from backend.app.modules.curriculum.domain.vo.visibility import Visibility
 
 
 class TestWeekScheduleRequest:
@@ -451,8 +451,10 @@ class TestCurriculumResponse:
         """DTO에서 응답 모델로 변환 테스트"""
         # Given
         week_schedules = [
-            WeekScheduleDTO(week_number=1, lessons=["기초 개념", "환경 설정"]),
-            WeekScheduleDTO(week_number=2, lessons=["심화 학습", "실습"]),
+            WeekScheduleDTO(
+                week_number=1, title="개념", lessons=["기초 개념", "환경 설정"]
+            ),
+            WeekScheduleDTO(week_number=2, title="개념", lessons=["심화 학습", "실습"]),
         ]
 
         dto = CurriculumDTO(
