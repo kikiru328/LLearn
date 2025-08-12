@@ -920,6 +920,7 @@ const CurriculumDetail: React.FC = () => {
               <Divider />
 
               {/* 통계 */}
+{/* 통계 */}
               <HStack spacing={8}>
                 <VStack align="start" spacing={1}>
                   <Text fontSize="sm" color={secondaryTextColor}>전체 주차</Text>
@@ -933,28 +934,8 @@ const CurriculumDetail: React.FC = () => {
                     {getTotalLessons()}개
                   </Text>
                 </VStack>
-                {/* 수정된 진행률 섹션 */}
+                {/* 진행률 섹션 - 중복 제거된 버전 */}
                 {renderProgressSection()}
-                <VStack align="start" flex={1} spacing={1}>
-                  <HStack justify="space-between" w="100%">
-                    <Text fontSize="sm" color={secondaryTextColor}>진행률</Text>
-                    <Text fontSize="sm" color={secondaryTextColor}>
-                      {curriculumProgress ? 
-                        `${curriculumProgress.completed_weeks}/${curriculumProgress.total_weeks}주차 완료` : 
-                        '계산 중...'
-                      }
-                    </Text>
-                  </HStack>
-                  <Progress 
-                    value={curriculumProgress?.completion_percentage || 0} 
-                    size="md" 
-                    colorScheme="blue" 
-                    w="200px"
-                  />
-                  <Text fontSize="xs" color={secondaryTextColor}>
-                    {curriculumProgress?.completion_percentage || 0}% 완료
-                  </Text>
-                </VStack>
               </HStack>
 
               {/* 카테고리와 태그 */}
