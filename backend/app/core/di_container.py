@@ -237,20 +237,6 @@ class Container(containers.DeclarativeContainer):
     comment_service = social_container.comment_service
     bookmark_service = social_container.bookmark_service
 
-    follow_domain_service = providers.Factory(
-        FollowDomainService,
-        follow_repo=follow_repository,
-        user_repo=user_repository,
-    )
-
-    follow_service = providers.Factory(
-        FollowService,
-        follow_repo=follow_repository,
-        user_repo=user_repository,
-        follow_domain_service=follow_domain_service,
-        ulid=providers.Singleton(ULID),
-    )
-
     feed_container = providers.Container(
         FeedContainer,
         session=db_session,
