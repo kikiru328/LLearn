@@ -1,3 +1,4 @@
+// src/pages/CurriculumDetail.tsx - 개선된 진행률 관리
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -39,6 +40,7 @@ import {
   Textarea,
   FormControl,
   FormLabel,
+  Tooltip,
 } from '@chakra-ui/react';
 import { 
   ArrowBackIcon, 
@@ -46,7 +48,9 @@ import {
   DeleteIcon, 
   AddIcon,
   CheckIcon,
-  TimeIcon 
+  TimeIcon,
+  StarIcon,
+  EditIcon as SummaryIcon
 } from '@chakra-ui/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { curriculumAPI, curriculumTagAPI, tagAPI, summaryAPI, feedbackAPI } from '../services/api';
@@ -96,11 +100,28 @@ interface Category {
   is_active: boolean;
   usage_count: number;
 }
+
+// 레슨별 체크 상태 (로컬 스토리지 기반)
+interface LessonProgress {
+  curriculum_id: string;
+  week_number: number;
+  lesson_index: number;
+  completed: boolean;
+  completed_at?: string;
+}
+
+// 주차별 요약과 피드백 정보
 interface WeekProgress {
   week_number: number;
+  week_title: string;
   has_summary: boolean;
+  summary_id?: string;
   has_feedback: boolean;
+  feedback_score?: number;
+  feedback_grade?: string;
   is_completed: boolean; // 요약과 피드백 모두 완료
+  completed_lessons: number; // 완료된 레슨 수
+  total_lessons: number; // 전체 레슨 수
 }
 
 interface CurriculumProgress {
@@ -108,6 +129,8 @@ interface CurriculumProgress {
   completed_weeks: number;
   completion_percentage: number;
   week_progress: WeekProgress[];
+  total_lessons: number;
+  completed_lessons: number;
 }
 
 const CurriculumDetail: React.FC = () => {
@@ -133,6 +156,9 @@ const CurriculumDetail: React.FC = () => {
   const [loadingTags, setLoadingTags] = useState(false);
   const [curriculumProgress, setCurriculumProgress] = useState<CurriculumProgress | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(false);
+  
+  // 레슨 진행률 상태 (로컬 스토리지 기반)
+  const [lessonProgress, setLessonProgress] = useState<LessonProgress[]>([]);
 
   // 계산된 값들 (state 선언 후에)
   const isOwner = curriculum && currentUserId && curriculum.owner_id === currentUserId;
@@ -144,7 +170,7 @@ const CurriculumDetail: React.FC = () => {
   const { isOpen: isWeekModalOpen, onOpen: onWeekModalOpen, onClose: onWeekModalClose } = useDisclosure();
   const { isOpen: isEditLessonModalOpen, onOpen: onEditLessonModalOpen, onClose: onEditLessonModalClose } = useDisclosure();
   const { isOpen: isDeleteWeekModalOpen, onOpen: onDeleteWeekModalOpen, onClose: onDeleteWeekModalClose } = useDisclosure();
-  // const { isOpen: isTagModalOpen, onOpen: onTagModalOpen, onClose: onTagModalClose } = useDisclosure();
+  const { isOpen: isTagModalOpen, onOpen: onTagModalOpen, onClose: onTagModalClose } = useDisclosure();
 
   // 다크모드 대응 색상
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -153,69 +179,258 @@ const CurriculumDetail: React.FC = () => {
   const cardBg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const hoverBg = useColorModeValue('gray.50', 'gray.600');
+
   useEffect(() => {
     if (id) {
       fetchCurriculumDetail();
-      fetchCurriculumProgress();
+      loadLessonProgress();
     }
   }, [id]);
-  const fetchCurriculumProgress = async () => {
+
+  // 로컬 스토리지에서 레슨 진행률 로드
+  const loadLessonProgress = () => {
+    if (!id) return;
+    try {
+      const stored = localStorage.getItem(`lesson_progress_${id}`);
+      if (stored) {
+        setLessonProgress(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('레슨 진행률 로드 실패:', error);
+    }
+  };
+
+  // 로컬 스토리지에 레슨 진행률 저장
+  const saveLessonProgress = (progress: LessonProgress[]) => {
+    if (!id) return;
+    try {
+      localStorage.setItem(`lesson_progress_${id}`, JSON.stringify(progress));
+      setLessonProgress(progress);
+    } catch (error) {
+      console.error('레슨 진행률 저장 실패:', error);
+    }
+  };
+
+  // 레슨 완료 상태 토글
+  const toggleLessonCompletion = (weekNumber: number, lessonIndex: number) => {
     if (!curriculum) return;
+
+    const lessonKey = `${curriculum.id}_${weekNumber}_${lessonIndex}`;
+    const existingIndex = lessonProgress.findIndex(
+      p => p.curriculum_id === curriculum.id && 
+           p.week_number === weekNumber && 
+           p.lesson_index === lessonIndex
+    );
+
+    let newProgress = [...lessonProgress];
+    
+    if (existingIndex >= 0) {
+      // 기존 항목 토글
+      newProgress[existingIndex] = {
+        ...newProgress[existingIndex],
+        completed: !newProgress[existingIndex].completed,
+        completed_at: !newProgress[existingIndex].completed ? new Date().toISOString() : undefined
+      };
+    } else {
+      // 새 항목 추가
+      newProgress.push({
+        curriculum_id: curriculum.id,
+        week_number: weekNumber,
+        lesson_index: lessonIndex,
+        completed: true,
+        completed_at: new Date().toISOString()
+      });
+    }
+
+    saveLessonProgress(newProgress);
+    
+    // 진행률 재계산
+    if (curriculum) {
+      calculateProgress(curriculum);
+    }
+  };
+
+  // 특정 레슨이 완료되었는지 확인
+  const isLessonCompleted = (weekNumber: number, lessonIndex: number): boolean => {
+    if (!curriculum) return false;
+    
+    return lessonProgress.some(
+      p => p.curriculum_id === curriculum.id && 
+           p.week_number === weekNumber && 
+           p.lesson_index === lessonIndex && 
+           p.completed
+    );
+  };
+
+  // 주차별 완료된 레슨 수 계산
+  const getCompletedLessonsForWeek = (weekNumber: number): number => {
+    if (!curriculum) return 0;
+    
+    return lessonProgress.filter(
+      p => p.curriculum_id === curriculum.id && 
+           p.week_number === weekNumber && 
+           p.completed
+    ).length;
+  };
+
+  const fetchTagsAndCategory = async (curriculumId: string) => {
+    try {
+      const response = await curriculumTagAPI.getTagsAndCategory(curriculumId);
+      setTags(response.data.tags || []);
+      setCategory(response.data.category || null);
+    } catch (error) {
+      console.log('태그/카테고리 정보 없음:', error);
+    }
+  };
+
+  const fetchCurriculumDetail = async () => {
+    if (!id) return;
+    
+    try {
+      setLoading(true);
+      setError('');
+      
+      const curriculumResponse = await curriculumAPI.getById(id);
+      const curriculumData = curriculumResponse.data;
+      setCurriculum(curriculumData);
+      
+      // 태그와 카테고리 정보 가져오기
+      await fetchTagsAndCategory(id);
+      
+      // 진행률 계산
+      await calculateProgress(curriculumData);
+      
+    } catch (error: any) {
+      console.error('커리큘럼 상세 조회 실패:', error);
+      setError('커리큘럼을 불러오는데 실패했습니다.');
+      
+      if (error.response?.status === 404) {
+        toast({
+          title: '커리큘럼을 찾을 수 없습니다',
+          status: 'error',
+          duration: 3000,
+        });
+        navigate('/curriculum');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateProgress = async (curriculumData: CurriculumDetail) => {
+    if (!curriculumData.week_schedules || curriculumData.week_schedules.length === 0) {
+      setCurriculumProgress({
+        total_weeks: 0,
+        completed_weeks: 0,
+        completion_percentage: 0,
+        week_progress: [],
+        total_lessons: 0,
+        completed_lessons: 0,
+      });
+      return;
+    }
 
     try {
       setLoadingProgress(true);
       
       // 각 주차별로 요약과 피드백 상태 확인
-      const weekProgressPromises = curriculum.week_schedules.map(async (week) => {
+      const weekProgressPromises = curriculumData.week_schedules.map(async (week) => {
         try {
-          // 해당 주차의 요약 조회
-          const summaryResponse = await summaryAPI.getByWeek(curriculum.id, week.week_number);
+          // 해당 주차의 요약 조회 (컨텐츠 기반으로 매칭)
+          const summaryResponse = await summaryAPI.getByWeek(curriculumData.id, week.week_number);
           const summaries = summaryResponse.data.summaries || [];
-          const hasSummary = summaries.length > 0;
+          
+          // 주차의 실제 컨텐츠와 매칭되는 요약 찾기
+          const matchingSummary = summaries.find((summary: any) => {
+            // 요약의 주차 번호와 현재 주차가 일치하는지 확인
+            // 실제로는 요약 내용이나 제목으로 더 정교한 매칭이 필요할 수 있음
+            return summary.week_number === week.week_number;
+          });
+          
+          const hasSummary = !!matchingSummary;
+          let hasFeedback = false;
+          let feedbackScore = undefined;
+          let feedbackGrade = undefined;
           
           // 요약이 있다면 피드백 확인
-          let hasFeedback = false;
-          if (hasSummary && summaries[0]) {
+          if (matchingSummary) {
             try {
-              await feedbackAPI.getBySummary(summaries[0].id);
+              const feedbackResponse = await feedbackAPI.getBySummary(matchingSummary.id);
+              const feedback = feedbackResponse.data;
               hasFeedback = true;
+              feedbackScore = feedback.score;
+              feedbackGrade = feedback.grade;
             } catch (error) {
-              // 피드백이 없는 경우
               hasFeedback = false;
             }
           }
 
+          // 레슨 완료 수 계산
+          const completedLessons = getCompletedLessonsForWeek(week.week_number);
+          const totalLessons = week.lessons.length;
+          
           return {
             week_number: week.week_number,
+            week_title: week.title,
             has_summary: hasSummary,
+            summary_id: matchingSummary?.id,
             has_feedback: hasFeedback,
-            is_completed: hasSummary && hasFeedback, // 요약과 피드백 모두 완료
+            feedback_score: feedbackScore,
+            feedback_grade: feedbackGrade,
+            is_completed: hasSummary && hasFeedback,
+            completed_lessons: completedLessons,
+            total_lessons: totalLessons,
           };
         } catch (error) {
           console.error(`주차 ${week.week_number} 진행률 조회 실패:`, error);
           return {
             week_number: week.week_number,
+            week_title: week.title,
             has_summary: false,
             has_feedback: false,
             is_completed: false,
+            completed_lessons: getCompletedLessonsForWeek(week.week_number),
+            total_lessons: week.lessons.length,
           };
         }
       });
 
       const weekProgressResults = await Promise.all(weekProgressPromises);
       const completedWeeks = weekProgressResults.filter(week => week.is_completed).length;
-      const totalWeeks = curriculum.week_schedules.length;
+      const totalWeeks = curriculumData.week_schedules.length;
       const completionPercentage = totalWeeks > 0 ? Math.round((completedWeeks / totalWeeks) * 100) : 0;
+      
+      // 전체 레슨 통계
+      const totalLessons = weekProgressResults.reduce((sum, week) => sum + week.total_lessons, 0);
+      const completedLessons = weekProgressResults.reduce((sum, week) => sum + week.completed_lessons, 0);
 
       setCurriculumProgress({
         total_weeks: totalWeeks,
         completed_weeks: completedWeeks,
         completion_percentage: completionPercentage,
         week_progress: weekProgressResults,
+        total_lessons: totalLessons,
+        completed_lessons: completedLessons,
       });
 
     } catch (error) {
       console.error('커리큘럼 진행률 계산 실패:', error);
+      setCurriculumProgress({
+        total_weeks: curriculumData.week_schedules.length,
+        completed_weeks: 0,
+        completion_percentage: 0,
+        week_progress: curriculumData.week_schedules.map(week => ({
+          week_number: week.week_number,
+          week_title: week.title,
+          has_summary: false,
+          has_feedback: false,
+          is_completed: false,
+          completed_lessons: getCompletedLessonsForWeek(week.week_number),
+          total_lessons: week.lessons.length,
+        })),
+        total_lessons: curriculumData.week_schedules.reduce((sum, week) => sum + week.lessons.length, 0),
+        completed_lessons: 0,
+      });
     } finally {
       setLoadingProgress(false);
     }
@@ -238,10 +453,12 @@ const CurriculumDetail: React.FC = () => {
 
     if (progress.is_completed) {
       return (
-        <Badge colorScheme="green" variant="solid" size="sm">
-          <CheckIcon mr={1} />
-          완료
-        </Badge>
+        <Tooltip label={`피드백 점수: ${progress.feedback_score || 'N/A'}/10`}>
+          <Badge colorScheme="green" variant="solid" size="sm">
+            <CheckIcon mr={1} />
+            완료 {progress.feedback_score && `(${progress.feedback_score}점)`}
+          </Badge>
+        </Tooltip>
       );
     }
 
@@ -256,16 +473,13 @@ const CurriculumDetail: React.FC = () => {
 
     return (
       <Badge colorScheme="blue" variant="outline" size="sm">
-        진행 중
+        진행 중 ({progress.completed_lessons}/{progress.total_lessons} 레슨)
       </Badge>
     );
   };
 
   // 진행률 표시 컴포넌트
   const renderProgressSection = () => {
-    console.log('renderProgressSection 호출, curriculumProgress:', curriculumProgress);
-    console.log('loadingProgress:', loadingProgress);
-    
     if (loadingProgress) {
       return (
         <VStack align="start" flex={1} spacing={1}>
@@ -279,17 +493,11 @@ const CurriculumDetail: React.FC = () => {
     }
 
     if (!curriculumProgress) {
-      console.log('curriculumProgress가 null임');
       return (
         <VStack align="start" flex={1} spacing={1}>
           <Text fontSize="sm" color={secondaryTextColor}>진행률</Text>
           <Text fontSize="sm" color={secondaryTextColor}>0/0주차 완료</Text>
-          <Progress 
-            value={0} 
-            size="md" 
-            colorScheme="blue" 
-            w="200px"
-          />
+          <Progress value={0} size="md" colorScheme="blue" w="200px" />
           <Text fontSize="xs" color={secondaryTextColor}>0% 완료</Text>
         </VStack>
       );
@@ -310,161 +518,16 @@ const CurriculumDetail: React.FC = () => {
           w="200px"
         />
         <Text fontSize="xs" color={secondaryTextColor}>
+          레슨: {curriculumProgress.completed_lessons}/{curriculumProgress.total_lessons}개 완료
+        </Text>
+        <Text fontSize="xs" color={secondaryTextColor}>
           {curriculumProgress.completion_percentage}% 완료
         </Text>
       </VStack>
     );
   };
 
-  const fetchTagsAndCategory = async (curriculumId: string) => {
-    try {
-      const response = await curriculumTagAPI.getTagsAndCategory(curriculumId);
-      setTags(response.data.tags || []);
-      setCategory(response.data.category || null);
-    } catch (error) {
-      console.log('태그/카테고리 정보 없음:', error);
-    }
-  };
-
- const fetchCurriculumDetail = async () => {
-    if (!id) return;
-    
-    try {
-      setLoading(true);
-      setError('');
-      
-      const curriculumResponse = await curriculumAPI.getById(id);
-      const curriculumData = curriculumResponse.data;
-      setCurriculum(curriculumData);
-      
-      // 태그와 카테고리 정보 가져오기
-      await fetchTagsAndCategory(id);
-      
-      // ✅ 중요: 커리큘럼 데이터를 설정한 후 진행률 계산
-      console.log('커리큘럼 데이터 로드 완료, 진행률 계산 시작...');
-      await calculateProgress(curriculumData); // 직접 데이터 전달
-      
-    } catch (error: any) {
-      console.error('커리큘럼 상세 조회 실패:', error);
-      setError('커리큘럼을 불러오는데 실패했습니다.');
-      
-      if (error.response?.status === 404) {
-        toast({
-          title: '커리큘럼을 찾을 수 없습니다',
-          status: 'error',
-          duration: 3000,
-        });
-        navigate('/curriculum');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateProgress = async (curriculumData: CurriculumDetail) => {
-    console.log('calculateProgress 시작, 커리큘럼:', curriculumData.title);
-    
-    if (!curriculumData.week_schedules || curriculumData.week_schedules.length === 0) {
-      console.log('주차 스케줄이 없음');
-      setCurriculumProgress({
-        total_weeks: 0,
-        completed_weeks: 0,
-        completion_percentage: 0,
-        week_progress: [],
-      });
-      return;
-    }
-
-    try {
-      setLoadingProgress(true);
-      console.log('주차별 진행률 계산 시작...');
-      
-      // 각 주차별로 요약과 피드백 상태 확인
-      const weekProgressPromises = curriculumData.week_schedules.map(async (week) => {
-        console.log(`${week.week_number}주차 진행률 확인 중...`);
-        
-        try {
-          // 해당 주차의 요약 조회
-          const summaryResponse = await summaryAPI.getByWeek(curriculumData.id, week.week_number);
-          const summaries = summaryResponse.data.summaries || [];
-          const hasSummary = summaries.length > 0;
-          
-          console.log(`${week.week_number}주차 - 요약: ${hasSummary ? '있음' : '없음'}`);
-          
-          // 요약이 있다면 피드백 확인
-          let hasFeedback = false;
-          if (hasSummary && summaries[0]) {
-            try {
-              await feedbackAPI.getBySummary(summaries[0].id);
-              hasFeedback = true;
-              console.log(`${week.week_number}주차 - 피드백: 있음`);
-            } catch (error) {
-              hasFeedback = false;
-              console.log(`${week.week_number}주차 - 피드백: 없음`);
-            }
-          }
-
-          const isCompleted = hasSummary && hasFeedback;
-          console.log(`${week.week_number}주차 - 완료 여부: ${isCompleted}`);
-
-          return {
-            week_number: week.week_number,
-            has_summary: hasSummary,
-            has_feedback: hasFeedback,
-            is_completed: isCompleted,
-          };
-        } catch (error) {
-          console.error(`주차 ${week.week_number} 진행률 조회 실패:`, error);
-          return {
-            week_number: week.week_number,
-            has_summary: false,
-            has_feedback: false,
-            is_completed: false,
-          };
-        }
-      });
-
-      const weekProgressResults = await Promise.all(weekProgressPromises);
-      const completedWeeks = weekProgressResults.filter(week => week.is_completed).length;
-      const totalWeeks = curriculumData.week_schedules.length;
-      const completionPercentage = totalWeeks > 0 ? Math.round((completedWeeks / totalWeeks) * 100) : 0;
-
-      console.log('진행률 계산 완료:', {
-        completedWeeks,
-        totalWeeks,
-        completionPercentage,
-        weekProgress: weekProgressResults
-      });
-
-      setCurriculumProgress({
-        total_weeks: totalWeeks,
-        completed_weeks: completedWeeks,
-        completion_percentage: completionPercentage,
-        week_progress: weekProgressResults,
-      });
-
-    } catch (error) {
-      console.error('커리큘럼 진행률 계산 실패:', error);
-      // 에러가 발생해도 기본값 설정
-      setCurriculumProgress({
-        total_weeks: curriculumData.week_schedules.length,
-        completed_weeks: 0,
-        completion_percentage: 0,
-        week_progress: curriculumData.week_schedules.map(week => ({
-          week_number: week.week_number,
-          has_summary: false,
-          has_feedback: false,
-          is_completed: false,
-        })),
-      });
-    } finally {
-      setLoadingProgress(false);
-    }
-  };
-
-
-
-
+  // ... (기존의 다른 함수들은 동일하게 유지)
   const handleTagSearch = async (query: string) => {
     if (query.length < 1) {
       setTagSuggestions([]);
@@ -507,7 +570,6 @@ const CurriculumDetail: React.FC = () => {
     }
   };
 
-  // 태그 제거
   const handleRemoveTag = async (tagName: string) => {
     if (!curriculum) return;
 
@@ -531,273 +593,7 @@ const CurriculumDetail: React.FC = () => {
     }
   };
 
-  const handleDeleteCurriculum = async () => {
-    if (!curriculum) return;
-
-    try {
-      await curriculumAPI.delete(curriculum.id);
-      
-      toast({
-        title: '커리큘럼이 삭제되었습니다',
-        status: 'success',
-        duration: 3000,
-      });
-      
-      navigate('/curriculum');
-    } catch (error: any) {
-      console.error('커리큘럼 삭제 실패:', error);
-      toast({
-        title: '커리큘럼 삭제에 실패했습니다',
-        status: 'error',
-        duration: 3000,
-      });
-    }
-  };
-
-  const handleEditCurriculum = async () => {
-    if (!curriculum || !editForm.title.trim()) {
-      toast({
-        title: '제목을 입력해주세요',
-        status: 'warning',
-        duration: 3000,
-      });
-      return;
-    }
-
-    try {
-      await curriculumAPI.update(curriculum.id, {
-        title: editForm.title.trim(),
-        visibility: editForm.visibility
-      });
-      
-      toast({
-        title: '커리큘럼이 수정되었습니다',
-        status: 'success',
-        duration: 3000,
-      });
-      
-      onEditModalClose();
-      fetchCurriculumDetail();
-    } catch (error: any) {
-      console.error('커리큘럼 수정 실패:', error);
-      toast({
-        title: '커리큘럼 수정에 실패했습니다',
-        status: 'error',
-        duration: 3000,
-      });
-    }
-  };
-
-  const openEditModal = () => {
-    if (curriculum) {
-      setEditForm({
-        title: curriculum.title,
-        visibility: curriculum.visibility
-      });
-      onEditModalOpen();
-    }
-  };
-
-  const handleAddWeek = () => {
-    const nextWeekNumber = curriculum ? Math.max(...curriculum.week_schedules.map(w => w.week_number)) + 1 : 1;
-    setWeekForm({ 
-      week_number: nextWeekNumber, 
-      title: '',  // 추가
-      lessons: [''] 
-    });
-    onWeekModalOpen();
-  };
-
-  const handleSaveWeek = async () => {
-    if (!curriculum || weekForm.lessons.filter(l => l.trim()).length === 0) {
-      toast({
-        title: '최소 1개의 레슨을 입력해주세요',
-        status: 'warning',
-        duration: 3000,
-      });
-      return;
-    }
-
-    try {
-      const validLessons = weekForm.lessons.filter(lesson => lesson.trim());
-      await curriculumAPI.addWeek(curriculum.id, {
-        week_number: weekForm.week_number,
-        title: weekForm.title,
-        lessons: validLessons
-      });
-      
-      toast({
-        title: '주차가 추가되었습니다',
-        status: 'success',
-        duration: 3000,
-      });
-      
-      onWeekModalClose();
-      fetchCurriculumDetail();
-    } catch (error: any) {
-      console.error('주차 추가 실패:', error);
-      toast({
-        title: '주차 추가에 실패했습니다',
-        description: error.response?.data?.detail || '다시 시도해주세요',
-        status: 'error',
-        duration: 5000,
-      });
-    }
-  };
-
-  const handleDeleteWeek = async (weekNumber: number) => {
-    if (!curriculum) return;
-
-    try {
-      await curriculumAPI.deleteWeek(curriculum.id, weekNumber);
-      
-      toast({
-        title: '주차가 삭제되었습니다',
-        status: 'success',
-        duration: 3000,
-      });
-      
-      onDeleteWeekModalClose();
-      fetchCurriculumDetail();
-    } catch (error: any) {
-      console.error('주차 삭제 실패:', error);
-      toast({
-        title: '주차 삭제에 실패했습니다',
-        status: 'error',
-        duration: 3000,
-      });
-    }
-  };
-
-  const handleAddLesson = (weekNumber: number) => {
-    setEditingWeek(weekNumber);
-    setLessonForm({ lesson: '' });
-    onLessonModalOpen();
-  };
-
-  const handleSaveLesson = async () => {
-    if (!curriculum || !editingWeek || !lessonForm.lesson.trim()) {
-      toast({
-        title: '레슨 내용을 입력해주세요',
-        status: 'warning',
-        duration: 3000,
-      });
-      return;
-    }
-
-    try {
-      await curriculumAPI.addLesson(curriculum.id, editingWeek, {
-        lesson: lessonForm.lesson.trim(),
-        lesson_index: lessonForm.lesson_index
-      });
-      
-      toast({
-        title: '레슨이 추가되었습니다',
-        status: 'success',
-        duration: 3000,
-      });
-      
-      onLessonModalClose();
-      fetchCurriculumDetail();
-    } catch (error: any) {
-      console.error('레슨 추가 실패:', error);
-      toast({
-        title: '레슨 추가에 실패했습니다',
-        description: error.response?.data?.detail || '다시 시도해주세요',
-        status: 'error',
-        duration: 5000,
-      });
-    }
-  };
-
-  const handleEditLesson = (weekNumber: number, lessonIndex: number, currentLesson: string) => {
-    setEditingLessonWeek(weekNumber);
-    setEditingLessonIndex(lessonIndex);
-    setLessonForm({ lesson: currentLesson });
-    onEditLessonModalOpen();
-  };
-
-  const handleUpdateLesson = async () => {
-    if (!curriculum || editingLessonWeek === null || editingLessonIndex === null || !lessonForm.lesson.trim()) {
-      toast({
-        title: '레슨 내용을 입력해주세요',
-        status: 'warning',
-        duration: 3000,
-      });
-      return;
-    }
-
-    try {
-      await curriculumAPI.updateLesson(curriculum.id, editingLessonWeek, editingLessonIndex, {
-        lesson: lessonForm.lesson.trim()
-      });
-      
-      toast({
-        title: '레슨이 수정되었습니다',
-        status: 'success',
-        duration: 3000,
-      });
-      
-      onEditLessonModalClose();
-      fetchCurriculumDetail();
-    } catch (error: any) {
-      console.error('레슨 수정 실패:', error);
-      toast({
-        title: '레슨 수정에 실패했습니다',
-        description: error.response?.data?.detail || '다시 시도해주세요',
-        status: 'error',
-        duration: 5000,
-      });
-    }
-  };
-
-  const handleDeleteLesson = async (weekNumber: number, lessonIndex: number) => {
-    if (!curriculum) return;
-
-    try {
-      await curriculumAPI.deleteLesson(curriculum.id, weekNumber, lessonIndex);
-      
-      toast({
-        title: '레슨이 삭제되었습니다',
-        status: 'success',
-        duration: 3000,
-      });
-      
-      fetchCurriculumDetail();
-    } catch (error: any) {
-      console.error('레슨 삭제 실패:', error);
-      toast({
-        title: '레슨 삭제에 실패했습니다',
-        status: 'error',
-        duration: 3000,
-      });
-    }
-  };
-
-  const addLessonToWeekForm = () => {
-    setWeekForm({
-      ...weekForm,
-      lessons: [...weekForm.lessons, '']
-    });
-  };
-
-  const removeLessonFromWeekForm = (index: number) => {
-    if (weekForm.lessons.length > 1) {
-      setWeekForm({
-        ...weekForm,
-        lessons: weekForm.lessons.filter((_, i) => i !== index)
-      });
-    }
-  };
-
-  const updateLessonInWeekForm = (index: number, value: string) => {
-    const newLessons = [...weekForm.lessons];
-    newLessons[index] = value;
-    setWeekForm({
-      ...weekForm,
-      lessons: newLessons
-    });
-  };
+  // ... (기존의 다른 CRUD 함수들은 동일하게 유지하되, 완료 후 calculateProgress 호출)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR', {
@@ -819,13 +615,6 @@ const CurriculumDetail: React.FC = () => {
     if (!curriculum) return 0;
     return curriculum.week_schedules.reduce((total: number, week: WeekSchedule) => total + week.lessons.length, 0);
   };
-
-  const getCompletedLessons = () => {
-    if (!curriculumProgress) return 0;
-    return curriculumProgress.completed_weeks;
-  };
-
-  const { isOpen: isTagModalOpen, onOpen: onTagModalOpen, onClose: onTagModalClose } = useDisclosure();
 
   if (loading) {
     return (
@@ -898,29 +687,38 @@ const CurriculumDetail: React.FC = () => {
                   >
                     목록으로
                   </Button>
-                  <Button
-                    leftIcon={<EditIcon />}
-                    colorScheme="blue"
-                    variant="outline"
-                    onClick={openEditModal}
-                  >
-                    수정
-                  </Button>
-                  <Button
-                    leftIcon={<DeleteIcon />}
-                    colorScheme="red"
-                    variant="outline"
-                    onClick={onDeleteModalOpen}
-                  >
-                    삭제
-                  </Button>
+                  {isOwner && (
+                    <>
+                      <Button
+                        leftIcon={<EditIcon />}
+                        colorScheme="blue"
+                        variant="outline"
+                        onClick={() => {
+                          setEditForm({
+                            title: curriculum.title,
+                            visibility: curriculum.visibility
+                          });
+                          onEditModalOpen();
+                        }}
+                      >
+                        수정
+                      </Button>
+                      <Button
+                        leftIcon={<DeleteIcon />}
+                        colorScheme="red"
+                        variant="outline"
+                        onClick={onDeleteModalOpen}
+                      >
+                        삭제
+                      </Button>
+                    </>
+                  )}
                 </HStack>
               </HStack>
 
               <Divider />
 
               {/* 통계 */}
-{/* 통계 */}
               <HStack spacing={8}>
                 <VStack align="start" spacing={1}>
                   <Text fontSize="sm" color={secondaryTextColor}>전체 주차</Text>
@@ -934,12 +732,10 @@ const CurriculumDetail: React.FC = () => {
                     {getTotalLessons()}개
                   </Text>
                 </VStack>
-                {/* 진행률 섹션 - 중복 제거된 버전 */}
                 {renderProgressSection()}
               </HStack>
 
               {/* 카테고리와 태그 */}
-
               <Divider />
 
               <VStack align="stretch" spacing={3}>
@@ -962,15 +758,17 @@ const CurriculumDetail: React.FC = () => {
                 <VStack align="start" spacing={2}>
                   <HStack justify="space-between" w="100%">
                     <Text fontSize="sm" color={secondaryTextColor}>태그</Text>
-                    <Button
-                      size="xs"
-                      leftIcon={<AddIcon />}
-                      colorScheme="green"
-                      variant="outline"
-                      onClick={onTagModalOpen}
-                    >
-                      태그 추가
-                    </Button>
+                    {isOwner && (
+                      <Button
+                        size="xs"
+                        leftIcon={<AddIcon />}
+                        colorScheme="green"
+                        variant="outline"
+                        onClick={onTagModalOpen}
+                      >
+                        태그 추가
+                      </Button>
+                    )}
                   </HStack>
                   
                   {tags.length > 0 ? (
@@ -980,11 +778,11 @@ const CurriculumDetail: React.FC = () => {
                           key={tag.id}
                           colorScheme="blue"
                           variant="outline"
-                          cursor="pointer"
-                          onClick={() => handleRemoveTag(tag.name)}
-                          title="클릭하여 제거"
+                          cursor={isOwner ? "pointer" : "default"}
+                          onClick={isOwner ? () => handleRemoveTag(tag.name) : undefined}
+                          title={isOwner ? "클릭하여 제거" : undefined}
                         >
-                          #{tag.name} ×
+                          #{tag.name} {isOwner && "×"}
                         </Badge>
                       ))}
                     </HStack>
@@ -1005,14 +803,24 @@ const CurriculumDetail: React.FC = () => {
             <VStack align="stretch" spacing={4}>
               <HStack justify="space-between">
                 <Heading size="md" color={textColor}>주차별 커리큘럼</Heading>
-                <Button
-                  leftIcon={<AddIcon />}
-                  colorScheme="green"
-                  size="sm"
-                  onClick={handleAddWeek}
-                >
-                  주차 추가
-                </Button>
+                {isOwner && (
+                  <Button
+                    leftIcon={<AddIcon />}
+                    colorScheme="green"
+                    size="sm"
+                    onClick={() => {
+                      const nextWeekNumber = curriculum ? Math.max(...curriculum.week_schedules.map(w => w.week_number)) + 1 : 1;
+                      setWeekForm({ 
+                        week_number: nextWeekNumber, 
+                        title: '',
+                        lessons: [''] 
+                      });
+                      onWeekModalOpen();
+                    }}
+                  >
+                    주차 추가
+                  </Button>
+                )}
               </HStack>
               
               <Accordion allowMultiple>
@@ -1042,28 +850,51 @@ const CurriculumDetail: React.FC = () => {
                             {renderWeekProgress(week)}
                           </HStack>
                           <HStack spacing={2}>
-                            <IconButton
-                              aria-label="레슨 추가"
-                              icon={<AddIcon />}
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAddLesson(week.week_number);
-                              }}
-                            />
-                            <IconButton
-                              aria-label="주차 삭제"
-                              icon={<DeleteIcon />}
-                              size="sm"
-                              variant="ghost"
-                              colorScheme="red"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingWeek(week.week_number);
-                                onDeleteWeekModalOpen();
-                              }}
-                            />
+                            <Tooltip label="주차 요약 작성하기">
+                              <IconButton
+                                aria-label="주차 요약 작성"
+                                icon={<SummaryIcon />}
+                                size="sm"
+                                variant="ghost"
+                                colorScheme="green"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const params = new URLSearchParams({
+                                    curriculum_id: curriculum.id,
+                                    week_number: week.week_number.toString(),
+                                  });
+                                  navigate(`/summary?${params.toString()}`);
+                                }}
+                              />
+                            </Tooltip>
+                            {isOwner && (
+                              <>
+                                <IconButton
+                                  aria-label="레슨 추가"
+                                  icon={<AddIcon />}
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingWeek(week.week_number);
+                                    setLessonForm({ lesson: '' });
+                                    onLessonModalOpen();
+                                  }}
+                                />
+                                <IconButton
+                                  aria-label="주차 삭제"
+                                  icon={<DeleteIcon />}
+                                  size="sm"
+                                  variant="ghost"
+                                  colorScheme="red"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingWeek(week.week_number);
+                                    onDeleteWeekModalOpen();
+                                  }}
+                                />
+                              </>
+                            )}
                             <AccordionIcon />
                           </HStack>
                         </HStack>
@@ -1075,72 +906,101 @@ const CurriculumDetail: React.FC = () => {
                           <Card key={index} variant="outline" size="sm">
                             <CardBody py={3}>
                               <HStack justify="space-between">
-                                <HStack>
+                                <HStack spacing={3}>
+                                  {/* 개선된 체크박스 UI */}
                                   <Box
                                     w={6}
                                     h={6}
                                     borderRadius="full"
-                                    bg="gray.200"
+                                    border="2px solid"
+                                    borderColor={isLessonCompleted(week.week_number, index) ? "green.500" : "gray.300"}
+                                    bg={isLessonCompleted(week.week_number, index) ? "green.500" : "transparent"}
                                     display="flex"
                                     alignItems="center"
                                     justifyContent="center"
-                                  >
-                                    <Text fontSize="xs" fontWeight="bold">
-                                      {index + 1}
-                                    </Text>
-                                  </Box>
-                                  <Text 
-                                    color={textColor} 
                                     cursor="pointer"
-                                    _hover={{ color: "blue.500", textDecoration: "underline" }}
-                                    onClick={() => {
-                                      const params = new URLSearchParams({
-                                        curriculum_id: curriculum.id,
-                                        week_number: week.week_number.toString(),
-                                        lesson_index: index.toString()
-                                      });
-                                      navigate(`/summary?${params.toString()}`);
+                                    transition="all 0.2s"
+                                    _hover={{
+                                      borderColor: isLessonCompleted(week.week_number, index) ? "green.600" : "green.400",
+                                      bg: isLessonCompleted(week.week_number, index) ? "green.600" : "green.50",
+                                      transform: "scale(1.1)"
                                     }}
+                                    onClick={() => toggleLessonCompletion(week.week_number, index)}
                                   >
-                                    {lesson}
-                                  </Text>
+                                    {isLessonCompleted(week.week_number, index) && (
+                                      <CheckIcon color="white" boxSize={3} />
+                                    )}
+                                  </Box>
+                                  <VStack align="start" spacing={1} flex={1}>
+                                    <Text 
+                                      color={isLessonCompleted(week.week_number, index) ? secondaryTextColor : textColor}
+                                      textDecoration={isLessonCompleted(week.week_number, index) ? "line-through" : "none"}
+                                      fontSize="sm"
+                                      fontWeight={isLessonCompleted(week.week_number, index) ? "normal" : "medium"}
+                                      cursor="pointer"
+                                      _hover={{ color: "purple.500" }}
+                                      onClick={() => {
+                                        // 레슨 클릭 시의 새로운 동작 (차후 구현)
+                                        console.log(`레슨 ${index + 1} 클릭됨: ${lesson}`);
+                                        // 예: 레슨 상세 보기, 노트 작성 등
+                                      }}
+                                    >
+                                      {lesson}
+                                    </Text>
+                                    {isLessonCompleted(week.week_number, index) && (
+                                      <Badge colorScheme="green" size="sm" variant="subtle">
+                                        <CheckIcon mr={1} boxSize={2} />
+                                        완료
+                                      </Badge>
+                                    )}
+                                  </VStack>
                                 </HStack>
                                 <HStack spacing={1}>
-                                  <IconButton
-                                    aria-label="요약 보기"
-                                    icon={<CheckIcon />}
-                                    size="sm"
-                                    variant="ghost"
-                                    colorScheme="green"
-                                    title="요약 보기"
-                                    onClick={() => {
-                                      const params = new URLSearchParams({
-                                        curriculum_id: curriculum.id,
-                                        week_number: week.week_number.toString(),
-                                        lesson_index: index.toString(),
-                                        view: 'list'
-                                      });
-                                      navigate(`/summary?${params.toString()}`);
-                                    }}
-                                  />
                                   {isOwner && (
                                     <>
-                                      <IconButton
-                                        aria-label="수정"
-                                        icon={<EditIcon />}
-                                        size="sm"
-                                        variant="ghost"
-                                        colorScheme="blue"
-                                        onClick={() => handleEditLesson(week.week_number, index, lesson)}
-                                      />
-                                      <IconButton
-                                        aria-label="삭제"
-                                        icon={<DeleteIcon />}
-                                        size="sm"
-                                        variant="ghost"
-                                        colorScheme="red"
-                                        onClick={() => handleDeleteLesson(week.week_number, index)}
-                                      />
+                                      <Tooltip label="레슨 수정">
+                                        <IconButton
+                                          aria-label="수정"
+                                          icon={<EditIcon />}
+                                          size="sm"
+                                          variant="ghost"
+                                          colorScheme="blue"
+                                          onClick={() => {
+                                            setEditingLessonWeek(week.week_number);
+                                            setEditingLessonIndex(index);
+                                            setLessonForm({ lesson });
+                                            onEditLessonModalOpen();
+                                          }}
+                                        />
+                                      </Tooltip>
+                                      <Tooltip label="레슨 삭제">
+                                        <IconButton
+                                          aria-label="삭제"
+                                          icon={<DeleteIcon />}
+                                          size="sm"
+                                          variant="ghost"
+                                          colorScheme="red"
+                                          onClick={async () => {
+                                            if (!window.confirm('정말로 이 레슨을 삭제하시겠습니까?')) return;
+                                            try {
+                                              await curriculumAPI.deleteLesson(curriculum.id, week.week_number, index);
+                                              toast({
+                                                title: '레슨이 삭제되었습니다',
+                                                status: 'success',
+                                                duration: 3000,
+                                              });
+                                              fetchCurriculumDetail();
+                                            } catch (error: any) {
+                                              console.error('레슨 삭제 실패:', error);
+                                              toast({
+                                                title: '레슨 삭제에 실패했습니다',
+                                                status: 'error',
+                                                duration: 3000,
+                                              });
+                                            }
+                                          }}
+                                        />
+                                      </Tooltip>
                                     </>
                                   )}
                                 </HStack>
@@ -1151,7 +1011,8 @@ const CurriculumDetail: React.FC = () => {
                         
                         {week.lessons.length === 0 && (
                           <Text color={secondaryTextColor} textAlign="center" py={4}>
-                            아직 레슨이 없습니다. 레슨을 추가해보세요.
+                            아직 레슨이 없습니다. 
+                            {isOwner && " 레슨을 추가해보세요."}
                           </Text>
                         )}
                       </VStack>
@@ -1163,6 +1024,7 @@ const CurriculumDetail: React.FC = () => {
           </CardBody>
         </Card>
 
+        {/* 모달들 */}
         {/* 레슨 추가 모달 */}
         <Modal isOpen={isLessonModalOpen} onClose={onLessonModalClose}>
           <ModalOverlay />
@@ -1187,7 +1049,42 @@ const CurriculumDetail: React.FC = () => {
               <Button variant="ghost" mr={3} onClick={onLessonModalClose}>
                 취소
               </Button>
-              <Button colorScheme="blue" onClick={handleSaveLesson}>
+              <Button 
+                colorScheme="blue" 
+                onClick={async () => {
+                  if (!curriculum || !editingWeek || !lessonForm.lesson.trim()) {
+                    toast({
+                      title: '레슨 내용을 입력해주세요',
+                      status: 'warning',
+                      duration: 3000,
+                    });
+                    return;
+                  }
+                  
+                  try {
+                    await curriculumAPI.addLesson(curriculum.id, editingWeek, {
+                      lesson: lessonForm.lesson.trim(),
+                      lesson_index: lessonForm.lesson_index
+                    });
+                    
+                    toast({
+                      title: '레슨이 추가되었습니다',
+                      status: 'success',
+                      duration: 3000,
+                    });
+                    
+                    onLessonModalClose();
+                    fetchCurriculumDetail();
+                  } catch (error: any) {
+                    console.error('레슨 추가 실패:', error);
+                    toast({
+                      title: '레슨 추가에 실패했습니다',
+                      status: 'error',
+                      duration: 3000,
+                    });
+                  }
+                }}
+              >
                 추가하기
               </Button>
             </ModalFooter>
@@ -1232,7 +1129,11 @@ const CurriculumDetail: React.FC = () => {
                         <Input
                           placeholder={`레슨 ${index + 1}`}
                           value={lesson}
-                          onChange={(e) => updateLessonInWeekForm(index, e.target.value)}
+                          onChange={(e) => {
+                            const newLessons = [...weekForm.lessons];
+                            newLessons[index] = e.target.value;
+                            setWeekForm({ ...weekForm, lessons: newLessons });
+                          }}
                           color={textColor}
                           borderColor={borderColor}
                         />
@@ -1243,7 +1144,14 @@ const CurriculumDetail: React.FC = () => {
                             size="sm"
                             colorScheme="red"
                             variant="ghost"
-                            onClick={() => removeLessonFromWeekForm(index)}
+                            onClick={() => {
+                              if (weekForm.lessons.length > 1) {
+                                setWeekForm({
+                                  ...weekForm,
+                                  lessons: weekForm.lessons.filter((_, i) => i !== index)
+                                });
+                              }
+                            }}
                           />
                         )}
                       </HStack>
@@ -1252,7 +1160,12 @@ const CurriculumDetail: React.FC = () => {
                       leftIcon={<AddIcon />}
                       variant="ghost"
                       size="sm"
-                      onClick={addLessonToWeekForm}
+                      onClick={() => {
+                        setWeekForm({
+                          ...weekForm,
+                          lessons: [...weekForm.lessons, '']
+                        });
+                      }}
                       color={textColor}
                     >
                       레슨 추가
@@ -1265,7 +1178,44 @@ const CurriculumDetail: React.FC = () => {
               <Button variant="ghost" mr={3} onClick={onWeekModalClose}>
                 취소
               </Button>
-              <Button colorScheme="green" onClick={handleSaveWeek}>
+              <Button 
+                colorScheme="green" 
+                onClick={async () => {
+                  if (!curriculum || weekForm.lessons.filter(l => l.trim()).length === 0) {
+                    toast({
+                      title: '최소 1개의 레슨을 입력해주세요',
+                      status: 'warning',
+                      duration: 3000,
+                    });
+                    return;
+                  }
+
+                  try {
+                    const validLessons = weekForm.lessons.filter(lesson => lesson.trim());
+                    await curriculumAPI.addWeek(curriculum.id, {
+                      week_number: weekForm.week_number,
+                      title: weekForm.title,
+                      lessons: validLessons
+                    });
+                    
+                    toast({
+                      title: '주차가 추가되었습니다',
+                      status: 'success',
+                      duration: 3000,
+                    });
+                    
+                    onWeekModalClose();
+                    fetchCurriculumDetail();
+                  } catch (error: any) {
+                    console.error('주차 추가 실패:', error);
+                    toast({
+                      title: '주차 추가에 실패했습니다',
+                      status: 'error',
+                      duration: 3000,
+                    });
+                  }
+                }}
+              >
                 주차 추가
               </Button>
             </ModalFooter>
@@ -1295,7 +1245,41 @@ const CurriculumDetail: React.FC = () => {
               <Button variant="ghost" mr={3} onClick={onEditLessonModalClose}>
                 취소
               </Button>
-              <Button colorScheme="blue" onClick={handleUpdateLesson}>
+              <Button 
+                colorScheme="blue" 
+                onClick={async () => {
+                  if (!curriculum || editingLessonWeek === null || editingLessonIndex === null || !lessonForm.lesson.trim()) {
+                    toast({
+                      title: '레슨 내용을 입력해주세요',
+                      status: 'warning',
+                      duration: 3000,
+                    });
+                    return;
+                  }
+
+                  try {
+                    await curriculumAPI.updateLesson(curriculum.id, editingLessonWeek, editingLessonIndex, {
+                      lesson: lessonForm.lesson.trim()
+                    });
+                    
+                    toast({
+                      title: '레슨이 수정되었습니다',
+                      status: 'success',
+                      duration: 3000,
+                    });
+                    
+                    onEditLessonModalClose();
+                    fetchCurriculumDetail();
+                  } catch (error: any) {
+                    console.error('레슨 수정 실패:', error);
+                    toast({
+                      title: '레슨 수정에 실패했습니다',
+                      status: 'error',
+                      duration: 3000,
+                    });
+                  }
+                }}
+              >
                 수정하기
               </Button>
             </ModalFooter>
@@ -1346,7 +1330,42 @@ const CurriculumDetail: React.FC = () => {
               <Button variant="ghost" mr={3} onClick={onEditModalClose}>
                 취소
               </Button>
-              <Button colorScheme="blue" onClick={handleEditCurriculum}>
+              <Button 
+                colorScheme="blue" 
+                onClick={async () => {
+                  if (!curriculum || !editForm.title.trim()) {
+                    toast({
+                      title: '제목을 입력해주세요',
+                      status: 'warning',
+                      duration: 3000,
+                    });
+                    return;
+                  }
+
+                  try {
+                    await curriculumAPI.update(curriculum.id, {
+                      title: editForm.title.trim(),
+                      visibility: editForm.visibility
+                    });
+                    
+                    toast({
+                      title: '커리큘럼이 수정되었습니다',
+                      status: 'success',
+                      duration: 3000,
+                    });
+                    
+                    onEditModalClose();
+                    fetchCurriculumDetail();
+                  } catch (error: any) {
+                    console.error('커리큘럼 수정 실패:', error);
+                    toast({
+                      title: '커리큘럼 수정에 실패했습니다',
+                      status: 'error',
+                      duration: 3000,
+                    });
+                  }
+                }}
+              >
                 수정하기
               </Button>
             </ModalFooter>
@@ -1373,7 +1392,31 @@ const CurriculumDetail: React.FC = () => {
               <Button variant="ghost" mr={3} onClick={onDeleteModalClose}>
                 취소
               </Button>
-              <Button colorScheme="red" onClick={handleDeleteCurriculum}>
+              <Button 
+                colorScheme="red" 
+                onClick={async () => {
+                  if (!curriculum) return;
+
+                  try {
+                    await curriculumAPI.delete(curriculum.id);
+                    
+                    toast({
+                      title: '커리큘럼이 삭제되었습니다',
+                      status: 'success',
+                      duration: 3000,
+                    });
+                    
+                    navigate('/curriculum');
+                  } catch (error: any) {
+                    console.error('커리큘럼 삭제 실패:', error);
+                    toast({
+                      title: '커리큘럼 삭제에 실패했습니다',
+                      status: 'error',
+                      duration: 3000,
+                    });
+                  }
+                }}
+              >
                 삭제하기
               </Button>
             </ModalFooter>
@@ -1402,7 +1445,29 @@ const CurriculumDetail: React.FC = () => {
               </Button>
               <Button 
                 colorScheme="red" 
-                onClick={() => editingWeek && handleDeleteWeek(editingWeek)}
+                onClick={async () => {
+                  if (!curriculum || !editingWeek) return;
+
+                  try {
+                    await curriculumAPI.deleteWeek(curriculum.id, editingWeek);
+                    
+                    toast({
+                      title: '주차가 삭제되었습니다',
+                      status: 'success',
+                      duration: 3000,
+                    });
+                    
+                    onDeleteWeekModalClose();
+                    fetchCurriculumDetail();
+                  } catch (error: any) {
+                    console.error('주차 삭제 실패:', error);
+                    toast({
+                      title: '주차 삭제에 실패했습니다',
+                      status: 'error',
+                      duration: 3000,
+                    });
+                  }
+                }}
               >
                 삭제하기
               </Button>
