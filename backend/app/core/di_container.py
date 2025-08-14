@@ -73,19 +73,16 @@ class Container(containers.DeclarativeContainer):
     )
 
     config = providers.Singleton(get_settings)
+    ulid = providers.Singleton(ULID)
+    crypto = providers.Singleton(Crypto)
 
-    # db_session = providers.Factory(AsyncSessionLocal)
-    db_session = providers.Resource(
-        get_session,
-    )
+    db_session = providers.Resource(get_session)
+    redis_resources = providers.Resource(lambda: redis_client)
 
     # User
-    user_repository = providers.Factory(
-        UserRepository,
-        session=db_session,
-    )
+    user_repository = providers.Singleton(UserRepository, session=db_session)
 
-    user_domain_service = providers.Factory(
+    user_domain_service = providers.Singleton(
         UserDomainService,
         user_repo=user_repository,
     )
@@ -94,8 +91,8 @@ class Container(containers.DeclarativeContainer):
         UserService,
         user_repo=user_repository,
         user_domain_service=user_domain_service,
-        ulid=providers.Singleton(ULID),
-        crypto=providers.Singleton(Crypto),
+        ulid=ulid,
+        crypto=crypto,
     )
 
     # Auth
@@ -103,8 +100,8 @@ class Container(containers.DeclarativeContainer):
         AuthService,
         user_repo=user_repository,
         user_domain_service=user_domain_service,
-        ulid=providers.Singleton(ULID),
-        crypto=providers.Singleton(Crypto),
+        ulid=ulid,
+        crypto=crypto,
     )
 
     # LLM
@@ -116,12 +113,12 @@ class Container(containers.DeclarativeContainer):
     )
 
     # Social
-    follow_repository = providers.Factory(
+    follow_repository = providers.Singleton(
         FollowRepository,
         session=db_session,
     )
 
-    follow_domain_service = providers.Factory(
+    follow_domain_service = providers.Singleton(
         FollowDomainService,
         follow_repo=follow_repository,
         user_repo=user_repository,
@@ -132,16 +129,16 @@ class Container(containers.DeclarativeContainer):
         follow_repo=follow_repository,
         user_repo=user_repository,
         follow_domain_service=follow_domain_service,
-        ulid=providers.Singleton(ULID),
+        ulid=ulid,
     )
 
     # Curriculum
-    curriculum_repository = providers.Factory(
+    curriculum_repository = providers.Singleton(
         CurriculumRepository,
         session=db_session,
     )
 
-    curriculum_domain_service = providers.Factory(
+    curriculum_domain_service = providers.Singleton(
         CurriculumDomainService,
         curriculum_repo=curriculum_repository,
     )
@@ -151,7 +148,7 @@ class Container(containers.DeclarativeContainer):
         curriculum_domain_service=curriculum_domain_service,
         llm_client=llm_client,
         follow_repo=follow_repository,
-        ulid=providers.Singleton(ULID),
+        ulid=ulid,
     )
     # Learning
 
@@ -175,27 +172,27 @@ class Container(containers.DeclarativeContainer):
 
     # Taxonomy
 
-    tag_repository = providers.Factory(
+    tag_repository = providers.Singleton(
         TagRepository,
         session=db_session,
     )
 
-    category_repository = providers.Factory(
+    category_repository = providers.Singleton(
         CategoryRepository,
         session=db_session,
     )
 
-    curriculum_tag_repository = providers.Factory(
+    curriculum_tag_repository = providers.Singleton(
         CurriculumTagRepository,
         session=db_session,
     )
 
-    curriculum_category_repository = providers.Factory(
+    curriculum_category_repository = providers.Singleton(
         CurriculumCategoryRepository,
         session=db_session,
     )
 
-    tag_domain_service = providers.Factory(
+    tag_domain_service = providers.Singleton(
         TagDomainService,
         tag_repo=tag_repository,
         category_repo=category_repository,
@@ -207,7 +204,7 @@ class Container(containers.DeclarativeContainer):
         TagService,
         tag_repo=tag_repository,
         tag_domain_service=tag_domain_service,
-        ulid=providers.Singleton(ULID),
+        ulid=ulid,
     )
 
     category_service = providers.Factory(
@@ -215,7 +212,7 @@ class Container(containers.DeclarativeContainer):
         category_repo=category_repository,
         curriculum_category_repo=curriculum_category_repository,
         tag_domain_service=tag_domain_service,
-        ulid=providers.Singleton(ULID),
+        ulid=ulid,
     )
 
     curriculum_tag_service = providers.Factory(
@@ -224,7 +221,7 @@ class Container(containers.DeclarativeContainer):
         curriculum_tag_repo=curriculum_tag_repository,
         curriculum_category_repo=curriculum_category_repository,
         curriculum_repo=curriculum_repository,
-        ulid=providers.Singleton(ULID),
+        ulid=ulid,
     )
 
     social_container = providers.Container(
@@ -245,8 +242,9 @@ class Container(containers.DeclarativeContainer):
     feed_service = feed_container.feed_service
     feed_repository = feed_container.feed_repository
 
-    admin_curriculum_repository = providers.Factory(
-        AdminCurriculumRepository, session=db_session
+    admin_curriculum_repository = providers.Singleton(
+        AdminCurriculumRepository,
+        session=db_session,
     )
     admin_curriculum_service = providers.Factory(
         AdminCurriculumService, repo=admin_curriculum_repository
@@ -255,6 +253,6 @@ class Container(containers.DeclarativeContainer):
     metrics_service = providers.Factory(
         MetricsService,
         session=db_session,
-        redis_client=providers.Singleton(lambda: redis_client),
+        redis_client=redis_resources,
         update_interval=30,
     )

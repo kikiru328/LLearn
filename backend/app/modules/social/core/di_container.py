@@ -19,23 +19,23 @@ class SocialContainer(containers.DeclarativeContainer):
     user_repository: providers.Dependency[object] = providers.Dependency()
 
     # Repositories
-    like_repository = providers.Factory(
+    like_repository = providers.Singleton(
         LikeRepository,
         session=session,
     )
 
-    comment_repository = providers.Factory(
+    comment_repository = providers.Singleton(
         CommentRepository,
         session=session,
     )
 
-    bookmark_repository = providers.Factory(
+    bookmark_repository = providers.Singleton(
         BookmarkRepository,
         session=session,
     )
 
     # Domain Service
-    social_domain_service = providers.Factory(
+    social_domain_service = providers.Singleton(
         SocialDomainService,
         like_repo=like_repository,
         comment_repo=comment_repository,
