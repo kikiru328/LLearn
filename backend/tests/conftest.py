@@ -3,6 +3,7 @@ pytest 공통 설정 및 fixture 정의
 """
 
 from datetime import datetime, timezone
+import os
 from typing import Any, Generator
 import pytest
 from ulid import ULID  # type: ignore
@@ -127,3 +128,12 @@ def sample_curriculum() -> Curriculum:
         updated_at=now,
         week_schedules=schedules,
     )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def test_env():
+    """테스트용 환경변수 설정"""
+    os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
+    os.environ["SECRET_KEY"] = "test-secret-key"
+    os.environ["LLM_API_KEY"] = "test-api-key"
+    os.environ["REDIS_URL"] = "redis://localhost:6379/1"
