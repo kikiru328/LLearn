@@ -5,7 +5,7 @@ from app.modules.curriculum.domain.service.curriculum_domain_service import (
     CurriculumDomainService,
 )
 from app.modules.curriculum.domain.vo import Visibility, WeekNumber
-from backend.app.modules.curriculum.domain.vo.title import Title
+from app.modules.curriculum.domain.vo.title import Title
 
 
 @pytest.mark.asyncio
