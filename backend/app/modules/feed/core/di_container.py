@@ -7,7 +7,7 @@ from app.modules.feed.infrastructure.repository.feed_repo import FeedRepository
 class FeedContainer(containers.DeclarativeContainer):
     session: providers.Dependency[object] = providers.Dependency()
 
-    feed_repository = providers.Factory(
+    feed_repository = providers.Singleton(
         FeedRepository,
         session=session,
     )

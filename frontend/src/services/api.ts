@@ -76,8 +76,23 @@ export const authAPI = {
 };
 
 export const curriculumAPI = {
-  // AI 커리큘럼 생성
-  create: (data: { 
+  // 직접 커리큘럼 생성
+  createManual: (data: {
+    title: string;
+    week_schedules: Array<{
+      week_number: number;
+      title?: string;
+      lessons: string[];
+    }>;
+    visibility?: 'PUBLIC' | 'PRIVATE';
+  }) => api.post('/curriculums', {
+    title: data.title,
+    week_schedules: data.week_schedules,
+    visibility: data.visibility || 'PRIVATE'
+  }),
+
+  // AI 커리큘럼 생성 (기존 create를 generate로 변경)
+  generate: (data: { 
     goal: string; 
     duration: number;
     difficulty?: 'beginner' | 'intermediate' | 'expert';
@@ -88,6 +103,7 @@ export const curriculumAPI = {
     difficulty: data.difficulty || 'beginner',
     details: data.details || ''
   }),
+
   
   // 내 커리큘럼 목록 조회 - 백엔드에서 확인된 정상 작동 엔드포인트
   getAll: (params?: { page?: number; items_per_page?: number }) => 

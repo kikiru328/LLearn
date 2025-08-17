@@ -22,17 +22,17 @@ class LearningContainer(containers.DeclarativeContainer):
     curriculum_repository: providers.Dependency[object] = providers.Dependency()
     llm_client: providers.Dependency[object] = providers.Dependency()
 
-    summary_repository = providers.Factory(
+    summary_repository = providers.Singleton(
         SummaryRepository,
         session=session,
     )
 
-    feedback_repository = providers.Factory(
+    feedback_repository = providers.Singleton(
         FeedbackRepository,
         session=session,
     )
 
-    learning_domain_service = providers.Factory(
+    learning_domain_service = providers.Singleton(
         LearningDomainService,
         summary_repo=summary_repository,
         feedback_repo=feedback_repository,

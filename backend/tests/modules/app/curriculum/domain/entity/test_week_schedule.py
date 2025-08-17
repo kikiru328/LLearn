@@ -3,7 +3,7 @@ import pytest
 from app.modules.curriculum.domain.entity.week_schedule import WeekSchedule
 from app.modules.curriculum.domain.vo.week_number import WeekNumber
 from app.modules.curriculum.domain.vo.lessons import Lessons
-from backend.app.modules.curriculum.domain.vo.title import Title
+from app.modules.curriculum.domain.vo.title import Title
 
 
 class TestWeekSchedule:
