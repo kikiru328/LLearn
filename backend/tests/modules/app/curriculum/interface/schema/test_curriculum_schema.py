@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime, timezone
 from pydantic import ValidationError
 
-from backend.app.modules.curriculum.interface.schema.curriculum_schema import (
+from app.modules.curriculum.interface.schema.curriculum_schema import (
     CreateCurriculumRequest,
     UpdateCurriculumRequest,
     CreateWeekScheduleRequest,
@@ -14,7 +14,7 @@ from backend.app.modules.curriculum.interface.schema.curriculum_schema import (
     CurriculumsPageResponse,
     WeekScheduleRequest,
 )
-from backend.app.modules.curriculum.application.dto.curriculum_dto import (
+from app.modules.curriculum.application.dto.curriculum_dto import (
     CreateCurriculumCommand,
     UpdateCurriculumCommand,
     CreateWeekScheduleCommand,
@@ -26,8 +26,8 @@ from backend.app.modules.curriculum.application.dto.curriculum_dto import (
     CurriculumPageDTO,
     WeekScheduleDTO,
 )
-from backend.app.modules.curriculum.domain.vo.difficulty import Difficulty
-from backend.app.modules.curriculum.domain.vo.visibility import Visibility
+from app.modules.curriculum.domain.vo.difficulty import Difficulty
+from app.modules.curriculum.domain.vo.visibility import Visibility
 
 
 class TestWeekScheduleRequest:
