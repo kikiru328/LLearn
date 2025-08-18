@@ -1,4 +1,4 @@
-// src/pages/SummaryDetail.tsx
+// src/pages/SummaryDetail.tsx - 마크다운 지원 및 이모지 추가
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -43,6 +43,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { summaryAPI, curriculumAPI, feedbackAPI } from '../services/api';
 import { getCurrentUserId } from '../utils/auth';
+
 interface SummaryDetail {
   id: string;
   curriculum_id: string;
@@ -73,6 +74,104 @@ interface Curriculum {
   }>;
 }
 
+// 📝 마크다운 렌더링 컴포넌트
+const MarkdownRenderer: React.FC<{ 
+  content: string; 
+  textColor: string; 
+  secondaryTextColor: string;
+}> = ({ content, textColor, secondaryTextColor }) => {
+  const renderMarkdown = (text: string) => {
+    const lines = text.split('\n');
+    const elements: React.ReactNode[] = [];
+    let currentIndex = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // 헤딩 처리
+      if (line.startsWith('## ')) {
+        elements.push(
+          <Heading key={currentIndex++} size="md" color={textColor} mt={4} mb={2}>
+            {line.replace('## ', '')}
+          </Heading>
+        );
+      } else if (line.startsWith('### ')) {
+        elements.push(
+          <Heading key={currentIndex++} size="sm" color={textColor} mt={3} mb={2}>
+            {line.replace('### ', '')}
+          </Heading>
+        );
+      }
+      // 굵은 텍스트 처리
+      else if (line.includes('**')) {
+        const parts = line.split('**');
+        const formattedLine = parts.map((part, index) => 
+          index % 2 === 1 ? (
+            <Text as="span" key={index} fontWeight="bold" color={textColor}>
+              {part}
+            </Text>
+          ) : (
+            <Text as="span" key={index} color={textColor}>
+              {part}
+            </Text>
+          )
+        );
+        elements.push(
+          <Text key={currentIndex++} color={textColor} lineHeight="1.6" mb={1}>
+            {formattedLine}
+          </Text>
+        );
+      }
+      // 리스트 처리
+      else if (line.startsWith('- ')) {
+        elements.push(
+          <Box key={currentIndex++} pl={4} mb={1}>
+            <Text color={textColor} lineHeight="1.6">
+              • {line.replace('- ', '')}
+            </Text>
+          </Box>
+        );
+      }
+      // 숫자 리스트 처리
+      else if (/^\d+\.\s/.test(line)) {
+        elements.push(
+          <Box key={currentIndex++} pl={4} mb={1}>
+            <Text color={textColor} lineHeight="1.6">
+              {line}
+            </Text>
+          </Box>
+        );
+      }
+      // 빈 줄 처리
+      else if (line.trim() === '') {
+        elements.push(<Box key={currentIndex++} h={2} />);
+      }
+      // 일반 텍스트
+      else if (line.trim()) {
+        elements.push(
+          <Text key={currentIndex++} color={textColor} lineHeight="1.6" mb={1}>
+            {line}
+          </Text>
+        );
+      }
+    }
+
+    return elements;
+  };
+
+  return <Box>{renderMarkdown(content)}</Box>;
+};
+
+// 🎯 점수에 따른 등급과 이모지 반환
+const getGradeInfo = (score: number) => {
+  if (score >= 9) return { grade: '탁월', emoji: '🏆', color: 'purple.500' };
+  if (score >= 8) return { grade: '우수', emoji: '🌟', color: 'blue.500' };
+  if (score >= 7) return { grade: '양호', emoji: '👍', color: 'green.500' };
+  if (score >= 6) return { grade: '보통', emoji: '📚', color: 'yellow.500' };
+  if (score >= 5) return { grade: '미흡', emoji: '📝', color: 'orange.500' };
+  return { grade: '노력필요', emoji: '💪', color: 'red.500' };
+};
+
 const SummaryDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -95,7 +194,10 @@ const SummaryDetail: React.FC = () => {
   const cardBg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const highlightBg = useColorModeValue('blue.50', 'blue.900');
+  const feedbackBg = useColorModeValue('gray.50', 'gray.800');
+  
   const isOwner = curriculum && currentUserId && curriculum.owner_id === currentUserId;
+
   useEffect(() => {
     if (id) {
       fetchSummaryDetail();
@@ -160,7 +262,7 @@ const SummaryDetail: React.FC = () => {
       });
       
       toast({
-        title: '요약이 수정되었습니다!',
+        title: '요약이 수정되었습니다! ✨',
         status: 'success',
         duration: 3000,
       });
@@ -170,7 +272,7 @@ const SummaryDetail: React.FC = () => {
     } catch (error: any) {
       console.error('요약 수정 실패:', error);
       toast({
-        title: '요약 수정에 실패했습니다',
+        title: '요약 수정에 실패했습니다 😕',
         status: 'error',
         duration: 3000,
       });
@@ -182,7 +284,7 @@ const SummaryDetail: React.FC = () => {
   const handleDeleteSummary = async () => {
     if (!summary) return;
     
-    if (!window.confirm('정말로 이 요약을 삭제하시겠습니까?')) {
+    if (!window.confirm('정말로 이 요약을 삭제하시겠습니까? 🗑️')) {
       return;
     }
 
@@ -190,7 +292,7 @@ const SummaryDetail: React.FC = () => {
       await summaryAPI.delete(summary.id);
       
       toast({
-        title: '요약이 삭제되었습니다',
+        title: '요약이 삭제되었습니다 🗑️',
         status: 'success',
         duration: 3000,
       });
@@ -199,7 +301,7 @@ const SummaryDetail: React.FC = () => {
     } catch (error: any) {
       console.error('요약 삭제 실패:', error);
       toast({
-        title: '요약 삭제에 실패했습니다',
+        title: '요약 삭제에 실패했습니다 😕',
         status: 'error',
         duration: 3000,
       });
@@ -215,7 +317,7 @@ const SummaryDetail: React.FC = () => {
       await feedbackAPI.generateFeedback(summary.id);
       
       toast({
-        title: '피드백 생성을 요청했습니다',
+        title: '🤖 피드백 생성을 요청했습니다',
         description: '잠시 후 피드백이 생성됩니다',
         status: 'success',
         duration: 3000,
@@ -230,7 +332,7 @@ const SummaryDetail: React.FC = () => {
     } catch (error: any) {
       console.error('피드백 요청 실패:', error);
       toast({
-        title: '피드백 요청에 실패했습니다',
+        title: '피드백 요청에 실패했습니다 😕',
         status: 'error',
         duration: 3000,
       });
@@ -271,22 +373,12 @@ const SummaryDetail: React.FC = () => {
     });
   };
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <StarIcon
-        key={i}
-        color={i < rating ? 'yellow.400' : 'gray.300'}
-        boxSize={4}
-      />
-    ));
-  };
-
   if (loading) {
     return (
       <Container maxW="4xl" py={8}>
         <VStack spacing={4}>
           <Spinner size="xl" color="blue.500" />
-          <Text color={textColor}>요약을 불러오는 중...</Text>
+          <Text color={textColor}>📖 요약을 불러오는 중...</Text>
         </VStack>
       </Container>
     );
@@ -301,12 +393,14 @@ const SummaryDetail: React.FC = () => {
             <AlertDescription>{error || '요약을 찾을 수 없습니다.'}</AlertDescription>
           </Alert>
           <Button leftIcon={<ArrowBackIcon />} onClick={() => navigate('/summary')}>
-            요약 목록으로 돌아가기
+            📚 요약 목록으로 돌아가기
           </Button>
         </VStack>
       </Container>
     );
   }
+
+  const gradeInfo = feedback ? getGradeInfo(feedback.score) : null;
 
   return (
     <Container maxW="4xl" py={8}>
@@ -315,7 +409,7 @@ const SummaryDetail: React.FC = () => {
         <Breadcrumb color={secondaryTextColor}>
           <BreadcrumbItem>
             <BreadcrumbLink onClick={() => navigate('/summary')}>
-              학습 요약
+              📚 학습 요약
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbItem isCurrentPage>
@@ -332,18 +426,23 @@ const SummaryDetail: React.FC = () => {
               <HStack justify="space-between" align="start">
                 <VStack align="start" spacing={2}>
                   <Text fontSize="sm" color="blue.500" fontWeight="semibold">
-                    {curriculum?.title}
+                    📖 {curriculum?.title}
                   </Text>
                   <Heading size="lg" color={textColor}>
                     {getLessonTitle()}
                   </Heading>
                   <HStack>
                     <Badge colorScheme="blue" variant="solid">
-                      {summary.week_number}주차
+                      📅 {summary.week_number}주차
                     </Badge>
                     {summary.lesson_index !== undefined && (
                       <Badge colorScheme="green" variant="subtle">
-                        레슨 {summary.lesson_index + 1}
+                        📝 레슨 {summary.lesson_index + 1}
+                      </Badge>
+                    )}
+                    {feedback && gradeInfo && (
+                      <Badge colorScheme={gradeInfo.color.split('.')[0]} variant="solid">
+                        {gradeInfo.emoji} {gradeInfo.grade}
                       </Badge>
                     )}
                   </HStack>
@@ -356,24 +455,28 @@ const SummaryDetail: React.FC = () => {
                     onClick={() => navigate('/summary')}
                     color={textColor}
                   >
-                    목록으로
+                    📚 목록으로
                   </Button>
-                  <Button
-                    leftIcon={<EditIcon />}
-                    colorScheme="blue"
-                    variant="outline"
-                    onClick={handleEditSummary}
-                  >
-                    수정
-                  </Button>
-                  <Button
-                    leftIcon={<DeleteIcon />}
-                    colorScheme="red"
-                    variant="outline"
-                    onClick={handleDeleteSummary}
-                  >
-                    삭제
-                  </Button>
+                  {isOwner && (
+                    <>
+                      <Button
+                        leftIcon={<EditIcon />}
+                        colorScheme="blue"
+                        variant="outline"
+                        onClick={handleEditSummary}
+                      >
+                        ✏️ 수정
+                      </Button>
+                      <Button
+                        leftIcon={<DeleteIcon />}
+                        colorScheme="red"
+                        variant="outline"
+                        onClick={handleDeleteSummary}
+                      >
+                        🗑️ 삭제
+                      </Button>
+                    </>
+                  )}
                 </HStack>
               </HStack>
 
@@ -381,9 +484,9 @@ const SummaryDetail: React.FC = () => {
 
               {/* 메타 정보 */}
               <HStack spacing={6} fontSize="sm" color={secondaryTextColor}>
-                <Text>작성일: {formatDate(summary.created_at)}</Text>
+                <Text>📅 작성일: {formatDate(summary.created_at)}</Text>
                 {summary.updated_at !== summary.created_at && (
-                  <Text>수정일: {formatDate(summary.updated_at)}</Text>
+                  <Text>✏️ 수정일: {formatDate(summary.updated_at)}</Text>
                 )}
               </HStack>
             </VStack>
@@ -394,7 +497,7 @@ const SummaryDetail: React.FC = () => {
         <Card bg={cardBg} borderColor={borderColor}>
           <CardBody>
             <VStack align="stretch" spacing={4}>
-              <Heading size="md" color={textColor}>학습 요약</Heading>
+              <Heading size="md" color={textColor}>📝 학습 요약</Heading>
               <Box
                 p={4}
                 bg={highlightBg}
@@ -414,33 +517,57 @@ const SummaryDetail: React.FC = () => {
           </CardBody>
         </Card>
 
-        {/* AI 피드백 섹션 */}
+        {/* AI 피드백 섹션 - 개선된 버전 */}
         {feedback ? (
           <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
               <VStack align="stretch" spacing={4}>
-                <HStack justify="space-between">
-                  <Heading size="md" color={textColor}>AI 피드백</Heading>
+                <HStack justify="space-between" align="center">
+                  <HStack>
+                    <Heading size="md" color={textColor}>🤖 AI 피드백</Heading>
+                    {gradeInfo && (
+                      <Badge 
+                        colorScheme={gradeInfo.color.split('.')[0]} 
+                        variant="solid"
+                        fontSize="sm"
+                        px={3}
+                        py={1}
+                      >
+                        {gradeInfo.emoji} {gradeInfo.grade}
+                      </Badge>
+                    )}
+                  </HStack>
                   <HStack>
                     {Array.from({ length: 5 }, (_, i) => (
                       <StarIcon
                         key={i}
                         color={i < Math.floor(feedback.score) ? 'yellow.400' : 'gray.300'}
-                        boxSize={4}
+                        boxSize={5}
                       />
                     ))}
-                    <Text fontSize="sm" color={secondaryTextColor}>
-                      ({feedback.score}/10)
+                    <Text fontSize="lg" fontWeight="bold" color={textColor}>
+                      {feedback.score}/10
                     </Text>
                   </HStack>
                 </HStack>
                 
-                <Text color={textColor} lineHeight="1.6">
-                  {feedback.comment}
-                </Text>
+                {/* 📝 마크다운 렌더링된 피드백 */}
+                <Box
+                  p={4}
+                  bg={feedbackBg}
+                  borderRadius="md"
+                  borderLeft="4px solid"
+                  borderLeftColor={gradeInfo?.color || 'gray.400'}
+                >
+                  <MarkdownRenderer 
+                    content={feedback.comment}
+                    textColor={textColor}
+                    secondaryTextColor={secondaryTextColor}
+                  />
+                </Box>
                 
                 <Text fontSize="xs" color={secondaryTextColor}>
-                  피드백 생성일: {formatDate(feedback.created_at)}
+                  🕒 피드백 생성일: {formatDate(feedback.created_at)}
                 </Text>
               </VStack>
             </CardBody>
@@ -449,17 +576,20 @@ const SummaryDetail: React.FC = () => {
           <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
               <VStack spacing={4}>
-                <StarIcon boxSize={8} color="gray.400" />
+                <Text fontSize="4xl">🤖</Text>
+                <Text color={secondaryTextColor} textAlign="center" fontSize="lg">
+                  아직 AI 피드백이 생성되지 않았습니다 📝
+                </Text>
                 <Text color={secondaryTextColor} textAlign="center">
-                  아직 AI 피드백이 생성되지 않았습니다.<br />
-                  곧 피드백을 받아볼 수 있습니다!
+                  AI가 당신의 학습을 분석하고 맞춤형 피드백을 제공해드립니다! ✨
                 </Text>
                 <Button
                   colorScheme="blue"
-                  variant="outline"
+                  size="lg"
                   onClick={handleRequestFeedback}
                   isLoading={loadingFeedback}
-                  loadingText="요청 중..."
+                  loadingText="🤖 분석 중..."
+                  leftIcon={<Text fontSize="lg">🎯</Text>}
                 >
                   피드백 요청하기
                 </Button>
@@ -472,38 +602,39 @@ const SummaryDetail: React.FC = () => {
         <Modal isOpen={isEditModalOpen} onClose={onEditModalClose} size="xl">
           <ModalOverlay />
           <ModalContent bg={cardBg} color={textColor}>
-            <ModalHeader>요약 수정</ModalHeader>
+            <ModalHeader>✏️ 요약 수정</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
               <VStack spacing={4}>
                 <Box w="100%">
                   <Text fontWeight="semibold" color={textColor} mb={2}>
-                    {curriculum?.title} - {getLessonTitle()}
+                    📖 {curriculum?.title} - {getLessonTitle()}
                   </Text>
                 </Box>
                 
                 <FormControl isRequired>
-                  <FormLabel color={textColor}>요약 내용</FormLabel>
+                  <FormLabel color={textColor}>📝 요약 내용</FormLabel>
                   <Textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     color={textColor}
                     borderColor={borderColor}
                     rows={12}
-                    placeholder="학습한 내용을 요약해주세요..."
+                    placeholder="학습한 내용을 요약해주세요... ✨"
                   />
                 </FormControl>
               </VStack>
             </ModalBody>
             <ModalFooter>
               <Button variant="ghost" mr={3} onClick={onEditModalClose}>
-                취소
+                ❌ 취소
               </Button>
               <Button 
                 colorScheme="blue" 
                 onClick={handleUpdateSummary}
                 isLoading={updating}
-                loadingText="수정 중..."
+                loadingText="💾 수정 중..."
+                leftIcon={<Text>💾</Text>}
               >
                 수정하기
               </Button>

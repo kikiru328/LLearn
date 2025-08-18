@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Dict, Optional
 
 from app.modules.learning.domain.vo.feedback_comment import FeedbackComment
 from app.modules.learning.domain.vo.feedback_score import FeedbackScore
@@ -15,6 +16,8 @@ class Feedback:
     score: FeedbackScore
     created_at: datetime
     updated_at: datetime
+    # 5개 지표는 DB에 저장하지 않고 런타임에서만 사용
+    _detailed_scores: Optional[Dict[str, float]] = None
 
     def __post_init__(self):
         if not isinstance(self.id, str) or not self.id.strip():
@@ -37,6 +40,14 @@ class Feedback:
             raise TypeError(
                 f"updated_at must be datetime, got {type(self.updated_at).__name__}"
             )
+
+    def set_detailed_scores(self, scores: Dict[str, float]) -> None:
+        """상세 점수 설정 (DB 저장 안함)"""
+        self._detailed_scores = scores
+
+    def get_detailed_scores(self) -> Optional[Dict[str, float]]:
+        """상세 점수 조회"""
+        return self._detailed_scores
 
     def update_feedback(
         self, new_comment: FeedbackComment, new_score: FeedbackScore

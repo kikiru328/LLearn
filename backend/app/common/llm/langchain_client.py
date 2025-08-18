@@ -144,17 +144,33 @@ class LangChainLLMClient(ILLMClientRepository):
     ) -> Dict[str, Any]:
         """피드백 생성"""
         logger.info("🔥 Starting feedback generation with LangChain v3")
+        lessons_str = ", ".join(lessons)
+
+        def _truncate(text: str, limit: int = 1200) -> str:
+            text = (text or "").strip()
+            return text if len(text) <= limit else (text[:limit] + " …(truncated)")
+
+        summary_slim = _truncate(summary_content, 1200)
+
+        role_content = (
+            "You are a learning feedback generator.\n"
+            "Follow EXACTLY the FEEDBACK_GENERATION_PROMPT rules.\n"
+            "Output ONLY a single valid JSON object with the required keys.\n"
+            "No preface, no suffix, no code fences, no extra text.\n"
+            "If the summary lacks detail, explicitly state that in the comment.\n"
+            "Do NOT invent or infer facts that are not present in the summary.\n"
+            "All direct quotes MUST come verbatim from the summary.\n"
+            "When evidence is insufficient, write '설명이 부족합니다' explicitly and avoid conjecture.\n"
+            "\n"
+            "=== CONTEXT (USE VERBATIM, DO NOT FABRICATE) ===\n"
+            f"Lessons: {lessons_str}\n"
+            "Summary:\n"
+            f"{summary_slim}\n"
+            "=== END CONTEXT ===\n"
+        )
 
         prompt = FEEDBACK_GENERATION_PROMPT.format(
             lessons=", ".join(lessons), summary=summary_content
-        )
-
-        role_content: str = (
-            "You are a learning feedback generator. "
-            "Output *only* valid JSON with exactly `comment` (string) "
-            "Generate in Korean "
-            "no markdown, no explanations, nothing else "
-            "and `score` (float 0–10). No other keys or markdown."
         )
 
         messages = self._create_messages(prompt, role_content)

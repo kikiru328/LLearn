@@ -1,4 +1,4 @@
-// src/pages/Summary.tsx
+// src/pages/Summary.tsx - 완전한 이모지 버전
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -38,7 +38,6 @@ import {
   AddIcon, 
   EditIcon, 
   DeleteIcon,
-  // ViewIcon,
   StarIcon,
   CheckIcon,
   TimeIcon,
@@ -47,6 +46,7 @@ import {
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { summaryAPI, curriculumAPI, feedbackAPI } from '../services/api';
 import { getCurrentUserId } from '../utils/auth';
+
 interface Summary {
   id: string;
   curriculum_id: string;
@@ -77,6 +77,7 @@ interface SummaryForm {
   week_number: number;
   content: string;
 }
+
 interface Feedback {
   id: string;
   summary_id: string;
@@ -181,7 +182,7 @@ const Summary: React.FC = () => {
     } catch (error: any) {
       console.error('주차별 요약 조회 실패:', error);
       toast({
-        title: '요약을 불러오는데 실패했습니다',
+        title: '😕 요약을 불러오는데 실패했습니다',
         status: 'error',
         duration: 3000,
       });
@@ -191,7 +192,7 @@ const Summary: React.FC = () => {
   const handleCreateSummary = async () => {
     if (!summaryForm.curriculum_id || !summaryForm.content.trim()) {
       toast({
-        title: '필수 정보를 입력해주세요',
+        title: '📝 필수 정보를 입력해주세요',
         status: 'warning',
         duration: 3000,
       });
@@ -202,7 +203,7 @@ const Summary: React.FC = () => {
 
     if (!selectedCurriculum || selectedCurriculum.owner_id !== currentUserId) {
       toast({
-        title: '권한이 없습니다',
+        title: '🚫 권한이 없습니다',
         description: '본인의 커리큘럼에만 요약을 작성할 수 있습니다.',
         status: 'error',
         duration: 3000,
@@ -218,7 +219,7 @@ const Summary: React.FC = () => {
       });
       
       toast({
-        title: '요약이 저장되었습니다!',
+        title: '✨ 요약이 저장되었습니다!',
         status: 'success',
         duration: 3000,
       });
@@ -233,7 +234,7 @@ const Summary: React.FC = () => {
     } catch (error: any) {
       console.error('요약 생성 실패:', error);
       toast({
-        title: '요약 저장에 실패했습니다',
+        title: '😕 요약 저장에 실패했습니다',
         description: error.response?.data?.detail || '다시 시도해주세요',
         status: 'error',
         duration: 5000,
@@ -279,7 +280,7 @@ const Summary: React.FC = () => {
   const handleUpdateSummary = async () => {
     if (!editingSummary || !summaryForm.content.trim()) {
       toast({
-        title: '내용을 입력해주세요',
+        title: '📝 내용을 입력해주세요',
         status: 'warning',
         duration: 3000,
       });
@@ -293,7 +294,7 @@ const Summary: React.FC = () => {
       });
       
       toast({
-        title: '요약이 수정되었습니다!',
+        title: '✨ 요약이 수정되었습니다!',
         status: 'success',
         duration: 3000,
       });
@@ -303,7 +304,7 @@ const Summary: React.FC = () => {
     } catch (error: any) {
       console.error('요약 수정 실패:', error);
       toast({
-        title: '요약 수정에 실패했습니다',
+        title: '😕 요약 수정에 실패했습니다',
         status: 'error',
         duration: 3000,
       });
@@ -313,7 +314,7 @@ const Summary: React.FC = () => {
   };
 
   const handleDeleteSummary = async (summaryId: string) => {
-    if (!window.confirm('정말로 이 요약을 삭제하시겠습니까?')) {
+    if (!window.confirm('🗑️ 정말로 이 요약을 삭제하시겠습니까?')) {
       return;
     }
 
@@ -321,7 +322,7 @@ const Summary: React.FC = () => {
       await summaryAPI.delete(summaryId);
       
       toast({
-        title: '요약이 삭제되었습니다',
+        title: '🗑️ 요약이 삭제되었습니다',
         status: 'success',
         duration: 3000,
       });
@@ -330,7 +331,7 @@ const Summary: React.FC = () => {
     } catch (error: any) {
       console.error('요약 삭제 실패:', error);
       toast({
-        title: '요약 삭제에 실패했습니다',
+        title: '😕 요약 삭제에 실패했습니다',
         status: 'error',
         duration: 3000,
       });
@@ -339,7 +340,7 @@ const Summary: React.FC = () => {
 
   const getCurriculumTitle = (curriculumId: string) => {
     const curriculum = curriculums.find(c => c.id === curriculumId);
-    return curriculum?.title || '알 수 없는 커리큘럼';
+    return curriculum?.title || '❓ 알 수 없는 커리큘럼';
   };
 
   // 피드백 로드 함수
@@ -373,8 +374,8 @@ const Summary: React.FC = () => {
       await feedbackAPI.generateFeedback(summaryId);
       
       toast({
-        title: '피드백 생성을 요청했습니다',
-        description: '잠시 후 피드백이 생성됩니다',
+        title: '🤖 피드백 생성을 요청했습니다',
+        description: '잠시 후 AI가 분석한 피드백이 생성됩니다 ⏳',
         status: 'success',
         duration: 3000,
       });
@@ -393,7 +394,7 @@ const Summary: React.FC = () => {
     } catch (error: any) {
       console.error('피드백 요청 실패:', error);
       toast({
-        title: '피드백 요청에 실패했습니다',
+        title: '😕 피드백 요청에 실패했습니다',
         status: 'error',
         duration: 3000,
       });
@@ -401,19 +402,26 @@ const Summary: React.FC = () => {
     }
   };
 
-  // 피드백 상태 확인 함수
+  // 피드백 상태 확인 함수 - 개선된 버전
   const getFeedbackStatus = (summaryId: string) => {
     if (loadingFeedbacks[summaryId]) {
-      return { status: 'loading', label: '생성 중...', color: 'yellow' };
+      return { status: 'loading', label: '🤖 생성 중...', color: 'yellow' };
     }
     
     if (feedbacks[summaryId]) {
-      return { status: 'completed', label: '피드백 완료', color: 'green' };
+      const feedback = feedbacks[summaryId];
+      const score = feedback.score;
+      
+      if (score >= 9) return { status: 'completed', label: '🏆 탁월', color: 'purple' };
+      if (score >= 8) return { status: 'completed', label: '🌟 우수', color: 'blue' };
+      if (score >= 7) return { status: 'completed', label: '👍 양호', color: 'green' };
+      if (score >= 6) return { status: 'completed', label: '📚 보통', color: 'yellow' };
+      if (score >= 5) return { status: 'completed', label: '📝 미흡', color: 'orange' };
+      return { status: 'completed', label: '💪 노력필요', color: 'red' };
     }
     
-    return { status: 'none', label: '피드백 요청', color: 'gray' };
+    return { status: 'none', label: '🎯 피드백 요청', color: 'gray' };
   };
-
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ko-KR', {
@@ -464,13 +472,12 @@ const Summary: React.FC = () => {
   const getWeekTitle = (curriculumId: string, weekNumber: number) => {
     const curriculum = curriculums.find(c => c.id === curriculumId);
     if (!curriculum || !curriculum.week_schedules) {
-      return `${weekNumber}주차`;
+      return `📅 ${weekNumber}주차`;
     }
     
     const week = curriculum.week_schedules.find(w => w.week_number === weekNumber);
-    return week?.title ? `${weekNumber}주차: ${week.title}` : `${weekNumber}주차`;
+    return week?.title ? `📅 ${weekNumber}주차: ${week.title}` : `📅 ${weekNumber}주차`;
   };
-
 
   const getSelectedWeekLessons = () => {
     try {
@@ -507,7 +514,7 @@ const Summary: React.FC = () => {
       <Container maxW="6xl" py={8}>
         <VStack spacing={4}>
           <Spinner size="xl" color="blue.500" />
-          <Text color={textColor}>요약을 불러오는 중...</Text>
+          <Text color={textColor}>📖 요약을 불러오는 중...</Text>
         </VStack>
       </Container>
     );
@@ -520,18 +527,18 @@ const Summary: React.FC = () => {
         <Breadcrumb color={secondaryTextColor}>
           <BreadcrumbItem>
             <BreadcrumbLink onClick={() => navigate('/')}>
-              홈
+              🏠 홈
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbItem isCurrentPage>
-            <BreadcrumbLink color={textColor}>학습 요약</BreadcrumbLink>
+            <BreadcrumbLink color={textColor}>📚 학습 요약</BreadcrumbLink>
           </BreadcrumbItem>
         </Breadcrumb>
 
         {/* 헤더 */}
         <HStack justify="space-between" align="center">
           <Heading size="lg" color={textColor}>
-            {selectedCurriculum ? `${selectedCurriculum.title} - 요약` : '학습 요약'}
+            {selectedCurriculum ? `📖 ${selectedCurriculum.title} - 요약` : '📚 학습 요약'}
           </Heading>
           <HStack>
             {selectedCurriculum && (
@@ -543,7 +550,7 @@ const Summary: React.FC = () => {
                   fetchData();
                 }}
               >
-                전체 보기
+                📋 전체 보기
               </Button>
             )}
             <Button
@@ -551,7 +558,7 @@ const Summary: React.FC = () => {
               colorScheme="blue"
               onClick={onCreateModalOpen}
             >
-              새 요약 작성
+              📝 새 요약 작성
             </Button>
           </HStack>
         </HStack>
@@ -569,20 +576,21 @@ const Summary: React.FC = () => {
           <Card bg={cardBg} borderColor={borderColor}>
             <CardBody>
               <VStack spacing={4} py={8}>
-                <StarIcon boxSize={12} color="gray.400" />
+                <Text fontSize="4xl">📝</Text>
                 <Heading size="md" color={secondaryTextColor}>
-                  {selectedCurriculum ? '이 커리큘럼에는 아직 작성된 요약이 없습니다' : '아직 작성된 요약이 없습니다'}
+                  {selectedCurriculum ? '📖 이 커리큘럼에는 아직 작성된 요약이 없습니다' : '📚 아직 작성된 요약이 없습니다'}
                 </Heading>
                 <Text color={secondaryTextColor} textAlign="center">
-                  학습한 내용을 요약해보세요!<br />
-                  요약을 통해 학습 내용을 더 잘 기억할 수 있습니다.
+                  학습한 내용을 요약해보세요! ✨<br />
+                  요약을 통해 학습 내용을 더 잘 기억할 수 있습니다. 🧠
                 </Text>
                 <Button
                   leftIcon={<AddIcon />}
                   colorScheme="blue"
                   onClick={onCreateModalOpen}
+                  size="lg"
                 >
-                  첫 번째 요약 작성하기
+                  📝 첫 번째 요약 작성하기
                 </Button>
               </VStack>
             </CardBody>
@@ -609,14 +617,14 @@ const Summary: React.FC = () => {
                     {/* 헤더 */}
                     <VStack align="start" spacing={1}>
                       <Text fontSize="sm" color="blue.500" fontWeight="semibold">
-                        {getCurriculumTitle(summary.curriculum_id)}
+                        📖 {getCurriculumTitle(summary.curriculum_id)}
                       </Text>
                       <Heading size="sm" color={textColor} noOfLines={1}>
                         {getWeekTitle(summary.curriculum_id, summary.week_number)}
                       </Heading>
                       <HStack>
                         <Badge colorScheme="blue" variant="subtle" size="sm">
-                          {summary.week_number}주차
+                          📅 {summary.week_number}주차
                         </Badge>
                         {(() => {
                           const feedbackStatus = getFeedbackStatus(summary.id);
@@ -646,8 +654,8 @@ const Summary: React.FC = () => {
 
                     {/* 메타 정보 */}
                     <Text fontSize="xs" color={secondaryTextColor}>
-                      {formatDate(summary.created_at)}
-                      {summary.updated_at !== summary.created_at && ' (수정됨)'}
+                      📅 {formatDate(summary.created_at)}
+                      {summary.updated_at !== summary.created_at && ' ✏️ (수정됨)'}
                     </Text>
 
                     {/* 액션 버튼 */}
@@ -663,7 +671,7 @@ const Summary: React.FC = () => {
                             handleRequestFeedback(summary.id);
                           }}
                         >
-                          피드백 요청
+                          🤖 피드백 요청
                         </Button>
                       )}
                       <Button
@@ -676,7 +684,7 @@ const Summary: React.FC = () => {
                           handleEditSummary(summary);
                         }}
                       >
-                        수정
+                        ✏️ 수정
                       </Button>
                       <Button
                         leftIcon={<DeleteIcon />}
@@ -688,7 +696,7 @@ const Summary: React.FC = () => {
                           handleDeleteSummary(summary.id);
                         }}
                       >
-                        삭제
+                        🗑️ 삭제
                       </Button>
                     </HStack>
                   </VStack>
@@ -702,14 +710,14 @@ const Summary: React.FC = () => {
         <Modal isOpen={isCreateModalOpen} onClose={onCreateModalClose} size="xl">
           <ModalOverlay />
           <ModalContent bg={cardBg} color={textColor}>
-            <ModalHeader>새 요약 작성</ModalHeader>
+            <ModalHeader>📝 새 요약 작성</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
               <VStack spacing={4}>
                 <FormControl isRequired>
-                  <FormLabel color={textColor}>커리큘럼 선택</FormLabel>
+                  <FormLabel color={textColor}>📚 커리큘럼 선택</FormLabel>
                   <Select
-                    placeholder="내 커리큘럼을 선택하세요"
+                    placeholder="📖 내 커리큘럼을 선택하세요"
                     value={summaryForm.curriculum_id}
                     onChange={(e) => setSummaryForm({ 
                       ...summaryForm, 
@@ -727,7 +735,7 @@ const Summary: React.FC = () => {
                       })
                       .map((curriculum) => (
                         <option key={curriculum.id} value={curriculum.id}>
-                          {curriculum.title}
+                          📖 {curriculum.title}
                         </option>
                       ))}
                   </Select>
@@ -735,7 +743,7 @@ const Summary: React.FC = () => {
 
                 {summaryForm.curriculum_id && (
                   <FormControl isRequired>
-                    <FormLabel color={textColor}>주차 선택</FormLabel>
+                    <FormLabel color={textColor}>📅 주차 선택</FormLabel>
                     <Select
                       value={summaryForm.week_number}
                       onChange={(e) => setSummaryForm({ 
@@ -747,7 +755,7 @@ const Summary: React.FC = () => {
                     >
                       {(getSelectedCurriculumWeeks() ?? []).map((week) => (
                         <option key={week.week_number} value={week.week_number}>
-                          {week.week_number}주차: {week.title ?? `${week.week_number}주차`}
+                          📅 {week.week_number}주차: {week.title ?? `${week.week_number}주차`}
                           ({Array.isArray(week.lessons) ? week.lessons.length : 0}개 레슨)
                         </option>
                       ))}
@@ -759,12 +767,12 @@ const Summary: React.FC = () => {
                 {summaryForm.curriculum_id && summaryForm.week_number && (
                   <Box w="100%" p={3} bg="blue.50" borderRadius="md" borderColor={borderColor}>
                     <Text fontSize="sm" fontWeight="semibold" color="blue.700" mb={2}>
-                      {summaryForm.week_number}주차 학습 내용:
+                      📚 {summaryForm.week_number}주차 학습 내용:
                     </Text>
                     <VStack align="start" spacing={1}>
                       {(getSelectedWeekLessons() ?? []).map((lesson, index) => (
                         <Text key={index} fontSize="sm" color="blue.600">
-                          • {lesson}
+                          📝 {lesson}
                         </Text>
                       )) || null}
                     </VStack>
@@ -772,9 +780,9 @@ const Summary: React.FC = () => {
                 )}
 
                 <FormControl isRequired>
-                  <FormLabel color={textColor}>요약 내용</FormLabel>
+                  <FormLabel color={textColor}>📝 요약 내용</FormLabel>
                   <Textarea
-                    placeholder="학습한 내용을 요약해주세요... (최소 100자)"
+                    placeholder="학습한 내용을 요약해주세요... ✨ (최소 100자)"
                     value={summaryForm.content}
                     onChange={(e) => setSummaryForm({ ...summaryForm, content: e.target.value })}
                     color={textColor}
@@ -783,21 +791,23 @@ const Summary: React.FC = () => {
                     minLength={100}
                   />
                   <Text fontSize="xs" color={secondaryTextColor} mt={1}>
-                    {(summaryForm.content?.length ?? 0)}/5000자 (최소 100자 필요)
+                    📊 {(summaryForm.content?.length ?? 0)}/5000자 (최소 100자 필요)
                   </Text>
                 </FormControl>
               </VStack>
             </ModalBody>
+
             <ModalFooter>
               <Button variant="ghost" mr={3} onClick={onCreateModalClose}>
-                취소
+                ❌ 취소
               </Button>
               <Button 
                 colorScheme="blue" 
                 onClick={handleCreateSummary}
                 isLoading={submitting}
-                loadingText="저장 중..."
+                loadingText="💾 저장 중..."
                 isDisabled={(summaryForm.content?.length ?? 0) < 100}
+                leftIcon={<Text>💾</Text>}
               >
                 저장하기
               </Button>
@@ -809,18 +819,18 @@ const Summary: React.FC = () => {
         <Modal isOpen={isEditModalOpen} onClose={onEditModalClose} size="xl">
           <ModalOverlay />
           <ModalContent bg={cardBg} color={textColor}>
-            <ModalHeader>요약 수정</ModalHeader>
+            <ModalHeader>✏️ 요약 수정</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
               <VStack spacing={4}>
                 <Box w="100%">
                   <Text fontWeight="semibold" color={textColor} mb={2}>
-                    {editingSummary && getCurriculumTitle(editingSummary.curriculum_id)} - {editingSummary?.week_number}주차
+                    📖 {editingSummary && getCurriculumTitle(editingSummary.curriculum_id)} - 📅 {editingSummary?.week_number}주차
                   </Text>
                 </Box>
                 
                 <FormControl isRequired>
-                  <FormLabel color={textColor}>요약 내용</FormLabel>
+                  <FormLabel color={textColor}>📝 요약 내용</FormLabel>
                   <Textarea
                     value={summaryForm.content}
                     onChange={(e) => setSummaryForm({ ...summaryForm, content: e.target.value })}
@@ -828,23 +838,25 @@ const Summary: React.FC = () => {
                     borderColor={borderColor}
                     rows={8}
                     minLength={100}
+                    placeholder="학습한 내용을 요약해주세요... ✨"
                   />
                   <Text fontSize="xs" color={secondaryTextColor} mt={1}>
-                    {(summaryForm.content?.length ?? 0)}/5000자 (최소 100자 필요)
+                    📊 {(summaryForm.content?.length ?? 0)}/5000자 (최소 100자 필요)
                   </Text>
                 </FormControl>
               </VStack>
             </ModalBody>
             <ModalFooter>
               <Button variant="ghost" mr={3} onClick={onEditModalClose}>
-                취소
+                ❌ 취소
               </Button>
               <Button 
                 colorScheme="blue" 
                 onClick={handleUpdateSummary}
                 isLoading={submitting}
-                loadingText="수정 중..."
+                loadingText="✏️ 수정 중..."
                 isDisabled={(summaryForm.content?.length ?? 0) < 100}
+                leftIcon={<Text>✏️</Text>}
               >
                 수정하기
               </Button>

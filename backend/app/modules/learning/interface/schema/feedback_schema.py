@@ -1,5 +1,6 @@
+import markdown
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from app.modules.learning.application.dto.learning_dto import (
@@ -50,26 +51,25 @@ class FeedbackResponse(BaseModel):
     comment: str
     score: float
     grade: str
-    comment_snippet: str
-    is_good_score: bool
-    is_poor_score: bool
+    detailed_scores: Optional[Dict[str, float]] = None
+    comment_html: str  # 마크다운을 HTML로 변환
     created_at: datetime
     updated_at: datetime
 
     @classmethod
     def from_dto(cls, dto: FeedbackDTO) -> "FeedbackResponse":
-        comment_snippet = (
-            dto.comment[:100] + "..." if len(dto.comment) > 100 else dto.comment
-        )
+
+        # 마크다운을 HTML로 변환
+        comment_html = markdown.markdown(dto.comment, extensions=["nl2br"])
+
         return cls(
             id=dto.id,
             summary_id=dto.summary_id,
             comment=dto.comment,
             score=dto.score,
             grade=dto.grade,
-            comment_snippet=comment_snippet,
-            is_good_score=dto.score >= 7.0,
-            is_poor_score=dto.score <= 4.0,
+            detailed_scores=dto.detailed_scores,
+            comment_html=comment_html,
             created_at=dto.created_at,
             updated_at=dto.updated_at,
         )

@@ -103,6 +103,7 @@ class FeedbackDTO:
     grade: str
     created_at: datetime
     updated_at: datetime
+    detailed_scores: Optional[Dict[str, float]] = None
 
     @classmethod
     def from_domain(cls, feedback: Feedback) -> "FeedbackDTO":
@@ -114,6 +115,7 @@ class FeedbackDTO:
             grade=feedback.get_grade(),
             created_at=feedback.created_at,
             updated_at=feedback.updated_at,
+            detailed_scores=feedback.get_detailed_scores(),
         )
 
 

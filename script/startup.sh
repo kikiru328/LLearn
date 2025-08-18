@@ -24,10 +24,15 @@ echo "  - DB Database: $MYSQL_DATABASE"
 echo "  - Redis Host: $REDIS_HOST:$REDIS_PORT"
 echo "  - Environment: $ENVIRONMENT"
 echo "  - Monitoring: ${USE_SIMPLE_METRICS:-false}"
-
+echo "📦 Checking Python packages..."
+python -c "import markdown" 2>/dev/null || {
+    echo "⚠️ markdown package missing, installing..."
+    pip install markdown
+}
+echo "✅ Python packages verified!"
 # 데이터베이스 연결 대기
 echo "⏳ Waiting for database connection..."
-until mysqladmin ping -h"$DB_HOST" -u"$DATABASE_NAME" -p"$DATABASE_PASSWORD" --silent; do
+until mysqladmin ping -h"$DB_HOST" -u"$DATABASE_NAME" -p"$DATABASE_PASSWORD"  --skip-ssl ; do
   echo "  ... still waiting for database..."
   sleep 3
 done

@@ -34,6 +34,10 @@ from app.modules.user.domain.vo.role import RoleVO
 
 from app.common.llm.decorators import trace_llm_operation
 
+import logging
+
+logger = logging.getLogger()
+
 
 class FeedbackService:
     def __init__(
@@ -149,6 +153,16 @@ class FeedbackService:
                 summary_content=summary.content.value,
             )
 
+            # 5개 지표 점수 추출
+            detailed_scores = {
+                "cognitive_load_retention": llm_response.get(
+                    "cognitive_load_retention", 0
+                ),
+                "engagement_behavior": llm_response.get("engagement_behavior", 0),
+                "transfer_application": llm_response.get("transfer_application", 0),
+                "competency_performance": llm_response.get("competency_performance", 0),
+                "realtime_analytics": llm_response.get("realtime_analytics", 0),
+            }
             feedback: Feedback = await self.learning_domain_service.create_feedback(
                 feedback_id=self.ulid.generate(),
                 summary_id=summary_id,
@@ -156,11 +170,20 @@ class FeedbackService:
                 score=llm_response["score"],
             )
 
+            # 상세 점수 설정 (DB 저장 안함)
+            feedback.set_detailed_scores(detailed_scores)
+
+            # DTO에도 상세 점수 포함
+            dto = FeedbackDTO.from_domain(feedback)
+            dto.detailed_scores = detailed_scores
+
             await self.feedback_repo.save(feedback)
             increment_feedback_creation()
-            return FeedbackDTO.from_domain(feedback)
+
+            return dto
 
         except Exception as e:
+            logger.error(f"🔥 Feedback generation failed: {e}")
             raise LLMFeedbackGenerationError(f"Failed to generate feedback: {str(e)}")
 
     async def get_feedback_by_id(
